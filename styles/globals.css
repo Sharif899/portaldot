@@ -1,0 +1,223 @@
+/* Google Fonts — Syne (display) + DM Sans (body) + JetBrains Mono (code) */
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── CSS design tokens ──────────────────────────────────────── */
+:root {
+  /* Light mode defaults */
+  --bg-base:      #f8f8fc;
+  --bg-surface:   #ffffff;
+  --bg-muted:     #f0f0f8;
+  --border:       #e8e8f0;
+  --border-strong:#d0d0e0;
+  --text-primary: #0f0f1a;
+  --text-secondary:#5a5a7a;
+  --text-muted:   #9090a8;
+  --brand:        #6152f8;
+  --brand-light:  #8178ff;
+  --brand-dim:    rgba(97, 82, 248, 0.1);
+  --accent-green: #00c98a;
+  --accent-amber: #f5a623;
+  --accent-coral: #ff6b6b;
+  --accent-cyan:  #00b8d9;
+  --shadow-sm:    0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md:    0 4px 16px rgba(0,0,0,0.08);
+  --shadow-lg:    0 8px 32px rgba(0,0,0,0.10);
+  --glow:         0 0 30px rgba(97,82,248,0.25);
+}
+
+html.dark {
+  /* Dark mode overrides */
+  --bg-base:      #0a0a0f;
+  --bg-surface:   #111118;
+  --bg-muted:     #1a1a28;
+  --border:       #1e1e2e;
+  --border-strong:#2a2a3e;
+  --text-primary: #f0f0ff;
+  --text-secondary:#9090b8;
+  --text-muted:   #5a5a78;
+  --brand:        #7a6aff;
+  --brand-light:  #9d8fff;
+  --brand-dim:    rgba(122, 106, 255, 0.15);
+  --accent-green: #00e5a0;
+  --accent-amber: #f5a623;
+  --accent-coral: #ff6b6b;
+  --accent-cyan:  #00d4ff;
+  --shadow-sm:    0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md:    0 4px 16px rgba(0,0,0,0.4);
+  --shadow-lg:    0 8px 32px rgba(0,0,0,0.5);
+  --glow:         0 0 40px rgba(122,106,255,0.35);
+}
+
+/* ─── Base resets ────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: 100vh;
+}
+
+/* ─── Typography ─────────────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.font-display { font-family: 'Syne', sans-serif; }
+.font-mono    { font-family: 'JetBrains Mono', monospace; }
+
+/* ─── Scrollbar ──────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-muted); }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--brand); }
+
+/* ─── Component classes ──────────────────────────────────────── */
+@layer components {
+
+  /* Cards */
+  .card {
+    @apply rounded-2xl border;
+    background: var(--bg-surface);
+    border-color: var(--border);
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-strong);
+  }
+  .card-glow:hover {
+    box-shadow: var(--glow);
+    border-color: var(--brand);
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-all duration-200 cursor-pointer select-none;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .btn:disabled { @apply opacity-50 cursor-not-allowed; }
+
+  .btn-primary {
+    @apply btn text-white;
+    background: var(--brand);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--brand-light);
+    box-shadow: var(--glow);
+    transform: translateY(-1px);
+  }
+  .btn-primary:active:not(:disabled) { transform: translateY(0); }
+
+  .btn-secondary {
+    @apply btn;
+    background: var(--brand-dim);
+    color: var(--brand);
+    border: 1px solid var(--brand);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--brand);
+    @apply text-white;
+  }
+
+  .btn-ghost {
+    @apply btn;
+    color: var(--text-secondary);
+    background: transparent;
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--bg-muted);
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+  .badge-property  { background: rgba(97,82,248,0.15);  color: var(--brand); }
+  .badge-commodity { background: rgba(245,166,35,0.15); color: var(--accent-amber); }
+  .badge-invoice   { background: rgba(0,229,160,0.15);  color: var(--accent-green); }
+  .badge-active    { background: rgba(0,229,160,0.15);  color: var(--accent-green); }
+  .badge-pending   { background: rgba(245,166,35,0.15); color: var(--accent-amber); }
+  .badge-bridging  { background: rgba(0,212,255,0.15);  color: var(--accent-cyan); }
+
+  /* Input fields */
+  .input {
+    @apply w-full rounded-xl px-4 py-3 text-sm outline-none transition-all duration-200;
+    background: var(--bg-muted);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    font-family: 'DM Sans', sans-serif;
+  }
+  .input::placeholder { color: var(--text-muted); }
+  .input:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px var(--brand-dim);
+  }
+
+  /* Address chip */
+  .address-chip {
+    @apply inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs;
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg-muted);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+  }
+
+  /* Section labels */
+  .section-label {
+    @apply text-xs font-semibold uppercase tracking-widest;
+    color: var(--text-muted);
+  }
+
+  /* Dividers */
+  .divider {
+    border-color: var(--border);
+  }
+
+  /* Page wrapper */
+  .page-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+}
+
+/* ─── Utility extras ─────────────────────────────────────────── */
+.text-gradient {
+  background: linear-gradient(135deg, var(--brand) 0%, var(--accent-cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.bg-grid {
+  background-size: 40px 40px;
+}
+
+html:not(.dark) .bg-grid { background-image: var(--tw-bg-grid-light, none); }
+html.dark       .bg-grid { background-image: var(--tw-bg-grid-dark, none); }
+
+/* Smooth transitions on theme switch */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color;
+  transition-duration: 0.2s;
+  transition-timing-function: ease;
+}
+/* Exclude transforms from the blanket transition (breaks animations) */
+.btn, .card { transition-property: background-color, border-color, color, box-shadow, transform; }

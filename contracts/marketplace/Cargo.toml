@@ -1,0 +1,32 @@
+[package]
+name = "marketplace"
+version = "0.1.0"
+authors = ["PortalRWA Team"]
+edition = "2021"
+
+[lib]
+name = "marketplace"
+path = "src/lib.rs"
+crate-type = ["cdylib"]
+
+[features]
+default = ["std"]
+std = [
+    "ink/std",
+    "scale/std",
+    "scale-info/std",
+]
+ink-as-dependency = []
+
+[dependencies]
+ink        = { version = "5.1.0", default-features = false }
+scale      = { package = "parity-scale-codec", version = "3.7", default-features = false, features = ["derive"] }
+scale-info = { version = "2.11", default-features = false, features = ["derive"] }
+
+[profile.release]
+opt-level       = "z"
+overflow-checks = true
+lto             = true
+codegen-units   = 1
+panic           = "abort"
+strip           = "symbols"

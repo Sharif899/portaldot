@@ -1,0 +1,14 @@
+# Rust build output — do NOT commit these
+target/
+
+# Compiled contract artifacts — commit only the .contract files, not the raw wasm
+# Uncomment below if you want to commit artifacts for easy deployment:
+# !target/ink/*.contract
+# !target/ink/*.json
+
+# Environment secrets — NEVER commit
+.env
+.env.local
+
+# Node modules (for deploy.js)
+node_modules/
