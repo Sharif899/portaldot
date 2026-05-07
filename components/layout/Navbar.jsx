@@ -5,7 +5,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useWallet } from "@/context/WalletContext";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import WalletButton from "@/components/ui/WalletButton";
-import { Menu, X, Layers } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
 // ─── Nav links ────────────────────────────────────────────────
 const NAV_LINKS = [
@@ -55,18 +55,16 @@ export default function Navbar() {
             {/* ── Logo ── */}
             <Link href="/" style={{ textDecoration: "none" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <div style={{
-                  width:        "36px",
-                  height:       "36px",
-                  borderRadius: "10px",
-                  background:   "linear-gradient(135deg, #6152f8 0%, #00d4ff 100%)",
-                  display:      "flex",
-                  alignItems:   "center",
-                  justifyContent: "center",
-                  boxShadow:    "0 0 20px rgba(97,82,248,0.4)",
-                }}>
-                  <Layers size={18} color="#fff" />
-                </div>
+                <img
+                  src="/pol-logo.jpg"
+                  alt="PortalRWA Logo"
+                  style={{
+                    width:        "36px",
+                    height:       "36px",
+                    borderRadius: "10px",
+                    objectFit:    "cover",
+                  }}
+                />
                 <div>
                   <span style={{
                     fontFamily:  "Syne, sans-serif",
