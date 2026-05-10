@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Head from "next/head";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
@@ -22,13 +22,23 @@ const MOCK_ASSETS = [
 
 export default function Bridge() {
   const { isConnected, connect } = useWallet();
+  const [userAssets,  setUserAssets]  = useState([]);
   const [fromChain,   setFromChain]   = useState("portaldot");
   const [toChain,     setToChain]     = useState("polkadot");
-  const [selectedAsset, setSelectedAsset] = useState(MOCK_ASSETS[0]);
+  const [selectedAsset, setSelectedAsset] = useState(ALL_BRIDGE_ASSETS[0]);
   const [amount,      setAmount]      = useState("");
   const [bridging,    setBridging]    = useState(false);
   const [txStep,      setTxStep]      = useState(0); // 0=idle 1=approving 2=locking 3=minting 4=done
   const [showTx,      setShowTx]      = useState(false);
+
+  // Load user assets from localStorage
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("portalrwa-assets") || "[]");
+      const mapped = saved.map(a => ({ id: a.id, name: a.name, symbol: a.symbol || a.name.slice(0,4).toUpperCase(), balance: a.fractionsAvailable || a.fractions }));
+      setUserAssets(mapped);
+    } catch(e) { setUserAssets([]); }
+  }, []);
 
   const swapChains = () => {
     setFromChain(toChain);
@@ -175,7 +185,7 @@ export default function Bridge() {
               <div style={{ marginBottom: "16px" }}>
                 <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Select Asset</label>
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {MOCK_ASSETS.map((asset) => (
+                  {ALL_BRIDGE_ASSETS.map((asset) => (
                     <div
                       key={asset.id}
                       onClick={() => setSelectedAsset(asset)}
