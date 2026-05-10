@@ -111,24 +111,7 @@ export default function Home() {
           }} />
 
           <div className="page-container" style={{ position: "relative", textAlign: "center" }}>
-            {/* Badge */}
-            <div style={{
-              display:        "inline-flex",
-              alignItems:     "center",
-              gap:            "8px",
-              padding:        "6px 14px",
-              borderRadius:   "20px",
-              border:         "1px solid var(--brand)",
-              background:     "var(--brand-dim)",
-              fontSize:       "12px",
-              fontWeight:     600,
-              color:          "var(--brand)",
-              marginBottom:   "24px",
-              letterSpacing:  "0.04em",
-            }}>
-              <Zap size={12} />
-              PORTALDOT HACKATHON 2026
-            </div>
+
 
             {/* Headline */}
             <h1 style={{
