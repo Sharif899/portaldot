@@ -78,9 +78,10 @@ export default function Dashboard() {
   }, []);
 
   const ALL_ASSETS = [...userAssets, ...MOCK_ASSETS];
-  const totalValue    = ALL_ASSETS.reduce((sum, a) => sum + a.valueUsd, 0);
+  const totalValue    = ALL_ASSETS.reduce((sum, a) => sum + (Number(a.valueUsd) || 0), 0);
   const verifiedCount = ALL_ASSETS.filter((a) => a.isVerified).length;
   const activeCount   = ALL_ASSETS.filter((a) => a.status === "Active").length;
+  const totalAssets   = ALL_ASSETS.length;
 
   const filtered = filter === "all"
     ? ALL_ASSETS
@@ -134,7 +135,7 @@ export default function Dashboard() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "16px", marginBottom: "28px" }}>
             {[
               { label: "Total Portfolio Value", value: `$${(totalValue / 1000).toFixed(0)}K`, icon: TrendingUp,  color: "var(--brand)"        },
-              { label: "Tokenized Assets",      value: MOCK_ASSETS.length,                    icon: Layers,      color: "var(--accent-cyan)"  },
+              { label: "Tokenized Assets",      value: totalAssets,                    icon: Layers,      color: "var(--accent-cyan)"  },
               { label: "ZKP Verified",          value: `${verifiedCount}/${MOCK_ASSETS.length}`, icon: ShieldCheck, color: "var(--accent-green)" },
               { label: "Active Assets",         value: activeCount,                            icon: ArrowUpRight, color: "var(--accent-amber)" },
             ].map(({ label, value, icon: Icon, color }) => (
