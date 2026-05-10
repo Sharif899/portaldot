@@ -23,9 +23,10 @@ const MOCK_ASSETS = [
 export default function Bridge() {
   const { isConnected, connect } = useWallet();
   const [userAssets,  setUserAssets]  = useState([]);
+  const [selectedAsset, setSelectedAsset] = useState(MOCK_ASSETS[0]);
   const [fromChain,   setFromChain]   = useState("portaldot");
   const [toChain,     setToChain]     = useState("polkadot");
-  const [selectedAsset, setSelectedAsset] = useState(ALL_BRIDGE_ASSETS[0]);
+
   const [amount,      setAmount]      = useState("");
   const [bridging,    setBridging]    = useState(false);
   const [txStep,      setTxStep]      = useState(0); // 0=idle 1=approving 2=locking 3=minting 4=done
@@ -65,6 +66,8 @@ export default function Bridge() {
     "Bridge complete!",
   ];
 
+  const MOCK_ASSETS_STATIC = MOCK_ASSETS;
+  const ALL_BRIDGE_ASSETS = [...userAssets, ...MOCK_ASSETS_STATIC];
   const fromChainInfo = CHAINS.find((c) => c.id === fromChain);
   const toChainInfo   = CHAINS.find((c) => c.id === toChain);
 
