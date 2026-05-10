@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Head from "next/head";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
@@ -17,6 +17,15 @@ export default function Privacy() {
   const [tab,          setTab]          = useState("verify");
   const [verifyAsset,  setVerifyAsset]  = useState("");
   const [verifyHash,   setVerifyHash]   = useState("");
+  const [myAssets,     setMyAssets]     = useState([]);
+
+  // Load user assets from localStorage
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("portalrwa-assets") || "[]");
+      setMyAssets(saved);
+    } catch(e) { setMyAssets([]); }
+  }, []);
   const [verifying,    setVerifying]    = useState(false);
   const [verifyResult, setVerifyResult] = useState(null); // null | true | false
   const [submitAsset,  setSubmitAsset]  = useState("");
@@ -137,6 +146,29 @@ export default function Privacy() {
                     Enter an asset contract address and document hash to verify the proof on-chain.
                   </p>
 
+                  {/* Quick select from user's assets */}
+                  {myAssets.length > 0 && (
+                    <div style={{ marginBottom: "14px" }}>
+                      <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Select Your Asset</label>
+                      <select
+                        className="input"
+                        onChange={(e) => {
+                          const asset = myAssets.find(a => a.id === e.target.value);
+                          if (asset) {
+                            setVerifyAsset(asset.contractAddress || asset.id);
+                            setVerifyHash(asset.zkpHash || "");
+                            setVerifyResult(null);
+                          }
+                        }}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <option value="">-- Select an asset --</option>
+                        {myAssets.map((a) => (
+                          <option key={a.id} value={a.id}>{a.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   <div style={{ marginBottom: "14px" }}>
                     <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Asset Contract Address</label>
                     <input type="text" placeholder="5Grwva..." value={verifyAsset} onChange={(e) => { setVerifyAsset(e.target.value); setVerifyResult(null); }} className="input" />
