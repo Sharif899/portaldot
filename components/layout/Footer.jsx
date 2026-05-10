@@ -120,9 +120,7 @@ export default function Footer() {
                 Portaldot Testnet
               </span>
             </div>
-            <p style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "8px" }}>
-              Built for Portaldot Hackathon 2025
-            </p>
+
           </div>
         </div>
 
