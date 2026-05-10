@@ -90,6 +90,31 @@ export default function Tokenize() {
     const mockTx = "0x" + Array.from({ length: 64 }, () =>
       Math.floor(Math.random() * 16).toString(16)
     ).join("");
+
+    // Save new asset to localStorage so dashboard shows it
+    const newAsset = {
+      id:                 Date.now().toString(),
+      name:               assetName,
+      symbol:             symbol,
+      assetType:          assetType,
+      valueUsd:           Number(assetValue),
+      fractions:          Number(fractions),
+      fractionsAvailable: Number(fractions),
+      pricePerFraction:   0.35,
+      ipfsCid:            ipfsCid,
+      zkpHash:            zkpHash,
+      isVerified:         false,
+      status:             "Active",
+      location:           location,
+      createdAt:          new Date().toISOString(),
+      txHash:             mockTx,
+    };
+    try {
+      const existing = JSON.parse(localStorage.getItem("portalrwa-assets") || "[]");
+      existing.unshift(newAsset);
+      localStorage.setItem("portalrwa-assets", JSON.stringify(existing));
+    } catch(e) { console.error("localStorage error:", e); }
+
     setTxHash(mockTx);
     setMinting(false);
     setShowSuccess(true);
