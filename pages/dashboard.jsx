@@ -136,7 +136,7 @@ export default function Dashboard() {
             {[
               { label: "Total Portfolio Value", value: `$${(totalValue / 1000).toFixed(0)}K`, icon: TrendingUp,  color: "var(--brand)"        },
               { label: "Tokenized Assets",      value: totalAssets,                    icon: Layers,      color: "var(--accent-cyan)"  },
-              { label: "ZKP Verified",          value: `${verifiedCount}/${MOCK_ASSETS.length}`, icon: ShieldCheck, color: "var(--accent-green)" },
+              { label: "ZKP Verified",          value: `${verifiedCount}/${totalAssets}`, icon: ShieldCheck, color: "var(--accent-green)" },
               { label: "Active Assets",         value: activeCount,                            icon: ArrowUpRight, color: "var(--accent-amber)" },
             ].map(({ label, value, icon: Icon, color }) => (
               <div key={label} style={{
