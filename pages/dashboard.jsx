@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
@@ -67,14 +67,24 @@ const MOCK_ACTIVITY = [
 export default function Dashboard() {
   const { isConnected, connect, selectedAccount, shortAddress } = useWallet();
   const [filter, setFilter] = useState("all");
+  const [userAssets, setUserAssets] = useState([]);
 
-  const totalValue    = MOCK_ASSETS.reduce((sum, a) => sum + a.valueUsd, 0);
-  const verifiedCount = MOCK_ASSETS.filter((a) => a.isVerified).length;
-  const activeCount   = MOCK_ASSETS.filter((a) => a.status === "Active").length;
+  // Load user assets from localStorage + merge with mock data
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("portalrwa-assets") || "[]");
+      setUserAssets(saved);
+    } catch(e) { setUserAssets([]); }
+  }, []);
+
+  const ALL_ASSETS = [...userAssets, ...MOCK_ASSETS];
+  const totalValue    = ALL_ASSETS.reduce((sum, a) => sum + a.valueUsd, 0);
+  const verifiedCount = ALL_ASSETS.filter((a) => a.isVerified).length;
+  const activeCount   = ALL_ASSETS.filter((a) => a.status === "Active").length;
 
   const filtered = filter === "all"
-    ? MOCK_ASSETS
-    : MOCK_ASSETS.filter((a) =>
+    ? ALL_ASSETS
+    : ALL_ASSETS.filter((a) =>
         filter === "property"  ? a.assetType === 0 :
         filter === "commodity" ? a.assetType === 1 :
         filter === "invoice"   ? a.assetType === 2 : true
