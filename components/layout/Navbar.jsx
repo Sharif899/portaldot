@@ -5,7 +5,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useWallet } from "@/context/WalletContext";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import WalletButton from "@/components/ui/WalletButton";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Layers } from "lucide-react";
 
 // ─── Nav links ────────────────────────────────────────────────
 const NAV_LINKS = [
@@ -59,15 +59,13 @@ export default function Navbar() {
                   width:        "36px",
                   height:       "36px",
                   borderRadius: "10px",
-                  overflow:     "hidden",
+                  background:   "linear-gradient(135deg, #6152f8 0%, #00d4ff 100%)",
+                  display:      "flex",
+                  alignItems:   "center",
+                  justifyContent: "center",
                   boxShadow:    "0 0 20px rgba(97,82,248,0.4)",
-                  flexShrink:   0,
                 }}>
-                  <img
-                    src="/portaldot-logo.png"
-                    alt="Portaldot Logo"
-                    style={{ width: "36px", height: "36px", objectFit: "cover", display: "block" }}
-                  />
+                  <Layers size={18} color="#fff" />
                 </div>
                 <div>
                   <span style={{
