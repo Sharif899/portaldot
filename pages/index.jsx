@@ -127,7 +127,7 @@ export default function Home() {
               letterSpacing:  "0.04em",
             }}>
               <Zap size={12} />
-              PORTALDOT HACKATHON 2025
+              PORTALDOT HACKATHON 2026
             </div>
 
             {/* Headline */}
