@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Head from "next/head";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
@@ -20,6 +20,15 @@ const LISTINGS = [
 export default function Marketplace() {
   const { isConnected, connect } = useWallet();
   const [search,       setSearch]       = useState("");
+  const [userListings, setUserListings] = useState([]);
+
+  // Load user tokenized assets from localStorage
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("portalrwa-assets") || "[]");
+      setUserListings(saved);
+    } catch(e) { setUserListings([]); }
+  }, []);
   const [typeFilter,   setTypeFilter]   = useState("all");
   const [sortBy,       setSortBy]       = useState("value");
   const [selectedAsset,setSelectedAsset]= useState(null);
@@ -28,7 +37,8 @@ export default function Marketplace() {
   const [showSuccess,  setShowSuccess]  = useState(false);
 
   // Filter + sort logic
-  const filtered = LISTINGS
+  const ALL_LISTINGS = [...userListings, ...LISTINGS];
+  const filtered = ALL_LISTINGS
     .filter((a) => {
       const matchSearch = a.name.toLowerCase().includes(search.toLowerCase()) ||
                           a.location.toLowerCase().includes(search.toLowerCase());
