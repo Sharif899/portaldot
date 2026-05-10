@@ -313,8 +313,8 @@ export default function Bridge() {
           })}
 
           {txStep === 4 && (
-            <Button variant="primary" fullWidth style={{ marginTop: "16px" }} onClick={() => { setShowTx(false); setTxStep(0); window.location.href = "/dashboard"; }}>
-              View in Dashboard
+            <Button variant="primary" fullWidth style={{ marginTop: "16px" }} onClick={() => { setShowTx(false); setTxStep(0); setAmount(""); }}>
+              Bridge Another Asset
             </Button>
           )}
         </div>
