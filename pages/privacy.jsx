@@ -233,6 +233,29 @@ export default function Privacy() {
                     </div>
                   ) : (
                     <>
+                      {/* Quick select from user's tokenized assets */}
+                      {myAssets.length > 0 && (
+                        <div style={{ marginBottom: "14px" }}>
+                          <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Select Your Asset</label>
+                          <select
+                            className="input"
+                            onChange={(e) => {
+                              const asset = myAssets.find(a => a.id === e.target.value);
+                              if (asset) {
+                                setSubmitAsset(asset.contractAddress || asset.id);
+                                setSubmitCid(asset.ipfsCid || "");
+                                setSubmitHash(asset.zkpHash || "");
+                              }
+                            }}
+                            style={{ cursor: "pointer" }}
+                          >
+                            <option value="">-- Select an asset --</option>
+                            {myAssets.map((a) => (
+                              <option key={a.id} value={a.id}>{a.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                       {[
                         { label: "Asset Contract Address", key: "asset", value: submitAsset, set: setSubmitAsset, placeholder: "5Grwva...", mono: false },
                         { label: "IPFS CID",               key: "cid",   value: submitCid,   set: setSubmitCid,   placeholder: "QmXabc...", mono: false },
