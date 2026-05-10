@@ -69,11 +69,23 @@ export default function Dashboard() {
   const [filter, setFilter] = useState("all");
   const [userAssets, setUserAssets] = useState([]);
 
+  const [recentActivity, setRecentActivity] = useState(MOCK_ACTIVITY);
+
   // Load user assets from localStorage + merge with mock data
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem("portalrwa-assets") || "[]");
       setUserAssets(saved);
+
+      // Build activity from user assets
+      const userActivity = saved.map((a) => ({
+        type:   "mint",
+        asset:  a.name,
+        time:   new Date(a.createdAt).toLocaleString(),
+        amount: `+${Number(a.fractions).toLocaleString()} fractions`,
+        color:  "var(--accent-green)",
+      }));
+      setRecentActivity([...userActivity, ...MOCK_ACTIVITY]);
     } catch(e) { setUserAssets([]); }
   }, []);
 
@@ -204,7 +216,7 @@ export default function Dashboard() {
                 Recent Activity
               </h3>
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                {MOCK_ACTIVITY.map((item, i) => (
+                {recentActivity.map((item, i) => (
                   <div key={i} style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
                     <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: item.color, marginTop: "5px", flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
