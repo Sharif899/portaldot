@@ -30,7 +30,7 @@ export default function Footer() {
                 fontSize:      "15px",
                 color:         "var(--text-primary)",
               }}>
-                Portal<span style={{ color: "var(--brand)" }}>RWA</span>
+                Asset<span style={{ color: "var(--brand)" }}>Dot</span>
               </span>
             </div>
             <p style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: 1.6, maxWidth: "200px" }}>
@@ -135,7 +135,7 @@ export default function Footer() {
           gap:            "8px",
         }}>
           <p style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-            © 2025 PortalRWA. Built on Portaldot L0.
+            © 2025 AssetDot. Built on Portaldot L0.
           </p>
           <p style={{ fontSize: "12px", color: "var(--text-muted)" }}>
             Powered by ink! smart contracts + ZKP privacy
