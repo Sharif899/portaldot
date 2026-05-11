@@ -127,7 +127,7 @@ export default function Home() {
               letterSpacing:  "0.04em",
             }}>
               <Zap size={12} />
-              PORTALDOT HACKATHON 2025
+              PORTALDOT HACKATHON 2026
             </div>
 
             {/* Headline */}
@@ -259,7 +259,7 @@ export default function Home() {
 
             <div style={{
               display:             "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gridTemplateColumns: "repeat(3, 1fr)",
               gap:                 "20px",
             }}>
               {FEATURES.map(({ icon: Icon, color, bg, title, desc }) => (
