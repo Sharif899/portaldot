@@ -1,6 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
-import { Github, Twitter } from "lucide-react";
+import { Github, Twitter, Layers } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -21,8 +20,18 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
-              <div style={{ width: "28px", height: "28px", borderRadius: "8px", overflow: "hidden", flexShrink: 0 }}>
-                <Image src="/portaldot-logo.png" alt="Portaldot Logo" width={28} height={28} style={{ objectFit: "cover", width: "100%", height: "100%" }} />
+              <div style={{
+                width:        "28px",
+                height:       "28px",
+                borderRadius: "8px",
+                background:   "linear-gradient(135deg, #6152f8 0%, #00d4ff 100%)",
+                display:      "flex",
+                alignItems:   "center",
+                justifyContent: "center",
+                flexShrink:   0,
+                boxShadow:    "0 0 12px rgba(97,82,248,0.4)",
+              }}>
+                <Layers size={14} color="#fff" />
               </div>
               <span style={{
                 fontFamily:    "Syne, sans-serif",
