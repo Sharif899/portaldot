@@ -1,61 +1,86 @@
-# PortalRWA — Real-World Asset Tokenization on Portaldot
+# AssetDot — Real-World Asset Tokenization on Portaldot
 
-> **Portaldot Online Mini Hackathon S1 Submission**
-> Built natively on the Portaldot Layer 0 blockchain using ink! smart contracts.
-
----
-
-## 🌍 The Problem
-
-Trillions of dollars in real-world assets — property, commodities, and invoices — remain illiquid, inaccessible, and siloed in emerging markets like Africa. Small investors cannot participate. Asset owners cannot unlock capital. There is no trusted, transparent infrastructure to bridge physical assets and global liquidity.
-
-## ⚡ The Solution
-
-**PortalRWA** is a no-code platform that lets anyone tokenize a real-world asset on Portaldot in under 5 minutes:
-
-- Upload legal document to **IPFS**
-- Generate a **ZKP proof** (proves document exists without revealing it)
-- Mint an **ink! token** on the Portaldot chain
-- Trade fractions via **iSwap DEX** integration
-- Bridge cross-chain via **iBridge**
-- Verify ownership privately via **ZKP proofs**
+> Unlock the value of real-world assets. Tokenize property, commodities, and invoices on the Portaldot Layer 0 blockchain — and trade them globally.
 
 ---
 
 ## 🎥 Demo Video
 
-> **[Watch Demo Video](https://youtube.com/YOUR_DEMO_LINK)**
+> **[Watch Demo](https://youtube.com/DEMO_LINK_HERE)**
+
+## 🔴 Live App
+
+> **[https://assetdot.vercel.app](https://assetdot.vercel.app)**
 
 ---
 
-## 🔴 Live Demo
+## 🌍 The Problem
 
-> **[https://portaldot.vercel.app](https://portaldot.vercel.app)**
+Trillions of dollars in real-world assets — property, farmland, commodities, and trade invoices — remain illiquid and inaccessible, especially across emerging markets in Africa. Asset owners cannot unlock capital. Investors cannot access these markets. The infrastructure to connect physical assets to global liquidity simply does not exist.
+
+## ⚡ The Solution
+
+**AssetDot** is a no-code platform that lets anyone tokenize a real-world asset on the Portaldot blockchain in under 5 minutes.
+
+Once tokenized:
+- Fractions can be traded on the **iSwap DEX** integration
+- Assets can be bridged cross-chain via **iBridge**
+- Ownership is verified privately via **ZKP proofs**
+- Everything is transparent, immutable, and trustless on-chain
 
 ---
 
-## 🚀 Run Locally (For Judges)
+## ✨ Features
 
-### Step 1 — Clone the repo
+| Feature | Description |
+|---|---|
+| 🏠 **Tokenize** | Upload legal document to IPFS, generate ZKP hash, mint RWA token on Portaldot |
+| 📊 **Dashboard** | Portfolio overview — asset values, fractions, ZKP status, activity feed |
+| 🛒 **Marketplace** | Buy and sell fractions of real-world assets via iSwap DEX integration |
+| 🌉 **Bridge** | Cross-chain transfers via Portaldot iBridge |
+| 🔒 **ZKP Privacy** | Prove an asset is real without revealing sensitive legal documents |
+
+---
+
+## 🏗️ Architecture
+
+```
+AssetDot
+├── Frontend       Next.js 14 + React + Tailwind CSS
+├── Wallet         Polkadot{.js} extension
+├── Contracts      ink! 4.x on Portaldot chain
+│   ├── rwa_token      PSP22 token + RWA metadata
+│   ├── marketplace    Fractional trading + escrow + 1% fee
+│   └── zkp_verifier   Privacy-preserving proof verification
+├── Storage        IPFS via Pinata
+└── Chain          Portaldot Layer 0 (LAO NPoS consensus)
+```
+
+---
+
+## 🚀 Run Locally
+
+### Requirements
+- Node.js v18+
+- Rust + cargo-contract
+- Polkadot{.js} browser extension
+- Portaldot dev node
+
+### 1. Clone the repo
 
 ```bash
 git clone https://github.com/Sharif899/portaldot.git
 cd portaldot
-```
-
-### Step 2 — Install frontend dependencies
-
-```bash
 npm install
 ```
 
-### Step 3 — Set up environment variables
+### 2. Set up environment variables
 
 ```bash
 cp .env.local.example .env.local
 ```
 
-Edit `.env.local` and fill in:
+Edit `.env.local`:
 
 ```env
 NEXT_PUBLIC_PORTALDOT_WS=ws://127.0.0.1:9944
@@ -65,57 +90,36 @@ NEXT_PUBLIC_ZKP_VERIFIER=5PLACEHOLDER
 NEXT_PUBLIC_MARKETPLACE=5PLACEHOLDER
 ```
 
-> Get free Pinata keys at [pinata.cloud](https://pinata.cloud) — needed for IPFS document uploads.
+### 3. Start the Portaldot local node
 
-### Step 4 — Start the Portaldot local node
-
-Download the Portaldot dev node from the official docs:
+Download the Portaldot dev node:
 > https://portaldot-dev.readthedocs.io/en/latest/chain-info.html
 
-Then run:
-
 ```bash
-# Ubuntu/Linux
-./portaldot_dev --dev --tmp --ws-external --rpc-external --rpc-cors all
-
-# Windows (WSL recommended)
 ./portaldot_dev --dev --tmp --ws-external --rpc-external --rpc-cors all
 ```
 
-Wait until you see `Imported #1` — node is running.
+Wait until you see Imported #1.
 
-### Step 5 — Deploy the ink! contracts
+### 4. Deploy ink! contracts
 
 ```bash
 cd contracts
-
-# Install dependencies
 npm install @polkadot/api @polkadot/api-contract @polkadot/keyring dotenv
-
-# Build contracts (requires cargo-contract)
-# Windows:
 build-contracts.bat
-# Linux/Mac:
-chmod +x build-contracts.sh && ./build-contracts.sh
-
-# Deploy to local node
 node deploy.js
 ```
 
-> **Note:** Contracts use Alice's account (pre-funded on dev node) for deployment. No tokens needed.
+Copy the printed contract addresses into your .env.local.
 
-After deployment, copy the printed contract addresses into your `.env.local`.
-
-### Step 6 — Run the frontend
+### 5. Run the frontend
 
 ```bash
-# Go back to root
 cd ..
-
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Open http://localhost:3000
 
 ---
 
@@ -123,41 +127,15 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ```
 portaldot/
-├── components/
-│   ├── layout/         Navbar, Sidebar, Footer
-│   └── ui/             Button, Modal, AssetCard, ThemeToggle, WalletButton
-├── context/
-│   ├── ThemeContext     Dark/light mode
-│   └── WalletContext    Polkadot wallet connection
-├── contracts/
-│   ├── rwa_token/       PSP22 RWA token contract (ink!)
-│   ├── marketplace/     Fractional trading contract (ink!)
-│   ├── zkp_verifier/    ZKP proof verification contract (ink!)
-│   ├── deploy.js        Deployment script
-│   └── build-contracts.bat
-├── hooks/               React hooks for blockchain interaction
-├── pages/               6 pages — home, tokenize, dashboard, marketplace, bridge, privacy
-├── public/
-│   └── mock-data.json   Demo data
-├── styles/
-│   └── globals.css      Design system
-└── utils/               Constants, formatters, IPFS utilities
-```
-
----
-
-## 🏗️ Architecture
-
-```
-PortalRWA
-├── Frontend     Next.js 14 + React + Tailwind CSS
-├── Wallet       Polkadot{.js} extension
-├── Contracts    ink! 4.x on Portaldot chain
-│   ├── rwa_token      — PSP22 token + RWA metadata
-│   ├── marketplace    — Fractional trading + escrow
-│   └── zkp_verifier   — Privacy-preserving proof verification
-├── Storage      IPFS via Pinata
-└── Chain        Portaldot Layer 0 (LAO NPoS consensus)
+├── components/layout/     Navbar, Sidebar, Footer
+├── components/ui/         Button, Modal, AssetCard, ThemeToggle, WalletButton
+├── context/               ThemeContext, WalletContext
+├── contracts/             rwa_token, marketplace, zkp_verifier (ink!)
+├── hooks/                 useContract, useRwaToken, useMarketplace, useIPFS, useZKP
+├── pages/                 home, tokenize, dashboard, marketplace, bridge, privacy
+├── public/                Static assets
+├── styles/                Global CSS design system
+└── utils/                 Constants, formatters, IPFS utilities
 ```
 
 ---
@@ -177,42 +155,29 @@ PortalRWA
 
 ---
 
-## 💡 Key Features
-
-| Feature | Description |
-|---|---|
-| 🏠 **Tokenize** | Upload document to IPFS, generate ZKP hash, mint RWA token on Portaldot |
-| 📊 **Dashboard** | Portfolio overview — values, fractions, activity feed |
-| 🛒 **Marketplace** | Buy and sell fractions via iSwap DEX integration |
-| 🌉 **Bridge** | Cross-chain transfers via Portaldot iBridge |
-| 🔒 **ZKP Privacy** | Prove asset is real without revealing legal documents |
-
----
-
 ## 🌍 Why Portaldot
 
-Portaldot is the only L0 chain with a **native RWA platform, DEX, cross-chain bridge, and privacy layer** in one ecosystem. PortalRWA uses all four natively.
+Portaldot is the only Layer 0 chain with a native RWA platform, DEX, cross-chain bridge, and privacy layer built in. AssetDot uses all four natively.
 
-The **LAO NPoS consensus** with hot-upgrade capability means PortalRWA can evolve without hard forks.
+The LAO NPoS consensus with hot-upgrade capability means AssetDot can evolve without hard forks. The Africa-first focus is intentional — the continent holds enormous illiquid wealth in real estate and commodities. AssetDot brings that wealth on-chain.
 
 ---
 
 ## 🗺️ Roadmap
 
-- **Q1 2026** — MVP on Portaldot testnet ✅
-- **Q2 2026** — Mainnet deployment + KYC verifier onboarding
-- **Q3 2026** — Mobile app + institutional integrations
-- **Q4 2026** — Quantum-resistant proof upgrade
+- Q1 2025 — MVP on Portaldot testnet
+- Q2 2025 — Mainnet deployment + KYC verifier onboarding
+- Q3 2025 — Mobile app + institutional integrations
+- Q4 2025 — Quantum-resistant proof upgrade
 
 ---
 
 ## 👤 Builder
 
-Built by **Sharif899** for **Portaldot Online Mini Hackathon S1**
-Category: Builder / Product
+Sharif899 — Builder / Product
 
 ---
 
 ## 📄 License
 
-MIT — built for the Portaldot ecosystem.
+MIT
