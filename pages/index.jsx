@@ -92,10 +92,49 @@ export default function Home() {
             width:      "800px",
             height:     "500px",
             background: isDark
-              ? "radial-gradient(ellipse, rgba(97,82,248,0.25) 0%, transparent 70%)"
-              : "radial-gradient(ellipse, rgba(97,82,248,0.12) 0%, transparent 70%)",
+              ? "radial-gradient(ellipse, rgba(97,82,248,0.2) 0%, transparent 70%)"
+              : "radial-gradient(ellipse, rgba(97,82,248,0.08) 0%, transparent 70%)",
             pointerEvents: "none",
           }} />
+
+          {/* Real-world asset background images */}
+          <div style={{
+            position:   "absolute",
+            inset:      0,
+            overflow:   "hidden",
+            pointerEvents: "none",
+          }}>
+            {/* Left image — building */}
+            <div style={{
+              position:   "absolute",
+              left:       "-2%",
+              top:        "5%",
+              width:      "28%",
+              height:     "90%",
+              backgroundImage: "url('https://images.unsplash.com/photo-1486325212027-8081e485255e?w=600&q=80')",
+              backgroundSize:  "cover",
+              backgroundPosition: "center",
+              borderRadius: "0 16px 16px 0",
+              opacity:    isDark ? 0.18 : 0.12,
+              maskImage:  "linear-gradient(to right, transparent 0%, black 30%, black 70%, transparent 100%)",
+              WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 30%, black 70%, transparent 100%)",
+            }} />
+            {/* Right image — farmland */}
+            <div style={{
+              position:   "absolute",
+              right:      "-2%",
+              top:        "5%",
+              width:      "28%",
+              height:     "90%",
+              backgroundImage: "url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80')",
+              backgroundSize:  "cover",
+              backgroundPosition: "center",
+              borderRadius: "16px 0 0 16px",
+              opacity:    isDark ? 0.18 : 0.12,
+              maskImage:  "linear-gradient(to left, transparent 0%, black 30%, black 70%, transparent 100%)",
+              WebkitMaskImage: "linear-gradient(to left, transparent 0%, black 30%, black 70%, transparent 100%)",
+            }} />
+          </div>
 
           {/* Grid background */}
           <div style={{
