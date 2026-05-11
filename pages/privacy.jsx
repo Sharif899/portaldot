@@ -22,7 +22,7 @@ export default function Privacy() {
   // Load user assets from localStorage
   useEffect(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem("portalrwa-assets") || "[]");
+      const saved = JSON.parse(localStorage.getItem("assetdot-assets") || "[]");
       setMyAssets(saved);
     } catch(e) { setMyAssets([]); }
   }, []);
@@ -64,7 +64,7 @@ export default function Privacy() {
   if (!isConnected) {
     return (
       <>
-        <Head><title>ZKP Privacy — PortalRWA</title></Head>
+        <Head><title>ZKP Privacy — AssetDot</title></Head>
         <Navbar />
         <div style={{ minHeight: "80vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px", textAlign: "center", padding: "40px" }}>
           <AlertCircle size={48} color="var(--text-muted)" />
@@ -78,7 +78,7 @@ export default function Privacy() {
 
   return (
     <>
-      <Head><title>ZKP Privacy — PortalRWA</title></Head>
+      <Head><title>ZKP Privacy — AssetDot</title></Head>
       <Navbar />
 
       <div style={{ display: "flex", minHeight: "calc(100vh - 64px)" }}>
