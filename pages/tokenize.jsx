@@ -110,9 +110,9 @@ export default function Tokenize() {
       txHash:             mockTx,
     };
     try {
-      const existing = JSON.parse(localStorage.getItem("portalrwa-assets") || "[]");
+      const existing = JSON.parse(localStorage.getItem("assetdot-assets") || "[]");
       existing.unshift(newAsset);
-      localStorage.setItem("portalrwa-assets", JSON.stringify(existing));
+      localStorage.setItem("assetdot-assets", JSON.stringify(existing));
     } catch(e) { console.error("localStorage error:", e); }
 
     setTxHash(mockTx);
@@ -124,7 +124,7 @@ export default function Tokenize() {
   if (!isConnected) {
     return (
       <>
-        <Head><title>Tokenize Asset — PortalRWA</title></Head>
+        <Head><title>Tokenize Asset — AssetDot</title></Head>
         <Navbar />
         <div style={{
           minHeight:      "80vh",
@@ -153,7 +153,7 @@ export default function Tokenize() {
 
   return (
     <>
-      <Head><title>Tokenize Asset — PortalRWA</title></Head>
+      <Head><title>Tokenize Asset — AssetDot</title></Head>
       <Navbar />
 
       <div style={{ display: "flex", minHeight: "calc(100vh - 64px)" }}>
