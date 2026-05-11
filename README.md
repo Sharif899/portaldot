@@ -174,7 +174,7 @@ The LAO NPoS consensus with hot-upgrade capability means AssetDot can evolve wit
 
 ## 👤 Builder
 
-Sharif899 — Builder / Product
+Sharif — Builder / Product
 
 ---
 
