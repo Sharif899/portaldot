@@ -35,7 +35,7 @@ export default function Bridge() {
   // Load user assets from localStorage
   useEffect(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem("portalrwa-assets") || "[]");
+      const saved = JSON.parse(localStorage.getItem("assetdot-assets") || "[]");
       const mapped = saved.map(a => ({ id: a.id, name: a.name, symbol: a.symbol || a.name.slice(0,4).toUpperCase(), balance: a.fractionsAvailable || a.fractions }));
       setUserAssets(mapped);
     } catch(e) { setUserAssets([]); }
@@ -74,7 +74,7 @@ export default function Bridge() {
   if (!isConnected) {
     return (
       <>
-        <Head><title>Bridge — PortalRWA</title></Head>
+        <Head><title>Bridge — AssetDot</title></Head>
         <Navbar />
         <div style={{ minHeight: "80vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px", textAlign: "center", padding: "40px" }}>
           <AlertCircle size={48} color="var(--text-muted)" />
@@ -88,7 +88,7 @@ export default function Bridge() {
 
   return (
     <>
-      <Head><title>Bridge — PortalRWA</title></Head>
+      <Head><title>Bridge — AssetDot</title></Head>
       <Navbar />
 
       <div style={{ display: "flex", minHeight: "calc(100vh - 64px)" }}>
