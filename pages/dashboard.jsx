@@ -74,7 +74,7 @@ export default function Dashboard() {
   // Load user assets from localStorage + merge with mock data
   useEffect(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem("portalrwa-assets") || "[]");
+      const saved = JSON.parse(localStorage.getItem("assetdot-assets") || "[]");
       setUserAssets(saved);
 
       // Build activity from user assets
@@ -106,7 +106,7 @@ export default function Dashboard() {
   if (!isConnected) {
     return (
       <>
-        <Head><title>Dashboard — PortalRWA</title></Head>
+        <Head><title>Dashboard — AssetDot</title></Head>
         <Navbar />
         <div style={{ minHeight: "80vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px", textAlign: "center", padding: "40px" }}>
           <AlertCircle size={48} color="var(--text-muted)" />
@@ -120,7 +120,7 @@ export default function Dashboard() {
 
   return (
     <>
-      <Head><title>Dashboard — PortalRWA</title></Head>
+      <Head><title>Dashboard — AssetDot</title></Head>
       <Navbar />
 
       <div style={{ display: "flex", minHeight: "calc(100vh - 64px)" }}>
