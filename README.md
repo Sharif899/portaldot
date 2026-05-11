@@ -165,10 +165,10 @@ The LAO NPoS consensus with hot-upgrade capability means AssetDot can evolve wit
 
 ## 🗺️ Roadmap
 
-- Q1 2025 — MVP on Portaldot testnet
-- Q2 2025 — Mainnet deployment + KYC verifier onboarding
-- Q3 2025 — Mobile app + institutional integrations
-- Q4 2025 — Quantum-resistant proof upgrade
+- Q2 2026 — MVP on Portaldot testnet
+- Q3 2026 — Mainnet deployment + KYC verifier onboarding
+- Q4 2026 — Mobile app + institutional integrations
+- Q1 2027 — Quantum-resistant proof upgrade
 
 ---
 
