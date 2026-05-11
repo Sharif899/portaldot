@@ -75,7 +75,7 @@ export default function Navbar() {
                     color:       "var(--text-primary)",
                     letterSpacing: "-0.02em",
                   }}>
-                    Portal<span style={{ color: "var(--brand)" }}>RWA</span>
+                    Asset<span style={{ color: "var(--brand)" }}>Dot</span>
                   </span>
                   <div style={{
                     fontSize:    "10px",
