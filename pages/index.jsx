@@ -70,7 +70,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>PortalRWA — Real-World Asset Tokenization on Portaldot</title>
+        <title>AssetDot — Real-World Asset Tokenization on Portaldot</title>
         <meta name="description" content="Tokenize, trade, and bridge real-world assets on the Portaldot Layer 0 blockchain." />
       </Head>
 
