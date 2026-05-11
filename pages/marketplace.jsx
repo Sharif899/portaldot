@@ -25,7 +25,7 @@ export default function Marketplace() {
   // Load user tokenized assets from localStorage
   useEffect(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem("portalrwa-assets") || "[]");
+      const saved = JSON.parse(localStorage.getItem("assetdot-assets") || "[]");
       setUserListings(saved);
     } catch(e) { setUserListings([]); }
   }, []);
@@ -66,7 +66,7 @@ export default function Marketplace() {
 
   return (
     <>
-      <Head><title>Marketplace — PortalRWA</title></Head>
+      <Head><title>Marketplace — AssetDot</title></Head>
       <Navbar />
 
       <div style={{ display: "flex", minHeight: "calc(100vh - 64px)" }}>
