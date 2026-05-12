@@ -32,7 +32,7 @@ export function WalletProvider({ children }) {
       (async () => {
         try {
           const { web3Accounts, web3Enable } = await import("@polkadot/extension-dapp");
-          const extensions = await web3Enable("AssetDot");
+          const extensions = await web3Enable("AssetDot" + Date.now());
           if (extensions.length === 0) return;
           const allAccounts = await web3Accounts();
           if (allAccounts.length === 0) return;
