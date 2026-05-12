@@ -7,9 +7,30 @@ import { useWallet } from "@/context/WalletContext";
 import { ShieldCheck, ShieldX, Shield, CheckCircle2, XCircle, Info, AlertCircle } from "lucide-react";
 
 const MOCK_PROOFS = [
-  { assetId: "5GrwABC...1234", assetName: "Lagos Island Apartment Block A", status: "Verified", hash: "a3f8e9b2c1d4...7f2e", submittedAt: "2025-01-15", verifiedAt: "2025-01-16", verifier: "5FHneW...d1Hi" },
-  { assetId: "5GrwDEF...5678", assetName: "Cocoa Export Batch #2024-11",    status: "Verified", hash: "b7c2d5e8f1a3...9c4d", submittedAt: "2025-01-14", verifiedAt: "2025-01-14", verifier: "5FHneW...d1Hi" },
-  { assetId: "5GrwGHI...9012", assetName: "Trade Invoice — Zenith Supplies",status: "Pending",  hash: "c9d3e6f2a8b5...1d7e", submittedAt: "2025-01-17", verifiedAt: null,          verifier: null           },
+  {
+    assetId: "5GrwABC...1234",
+    assetName: "Lagos Island Apartment Block A",
+    contractAddress: "5GrwABC1234xLagosIslandApartment",
+    ipfsCid: "QmXabc1LagosApartmentDoc123",
+    zkpHash: "a3f8e9b2c1d47f2e",
+    status: "Verified", hash: "a3f8e9b2c1d4...7f2e", submittedAt: "2025-01-15", verifiedAt: "2025-01-16", verifier: "5FHneW...d1Hi"
+  },
+  {
+    assetId: "5GrwDEF...5678",
+    assetName: "Cocoa Export Batch #2024-11",
+    contractAddress: "5GrwDEF5678xCocoaExportBatch",
+    ipfsCid: "QmXabc2CocoaExportBatch456",
+    zkpHash: "b7c2d5e8f1a39c4d",
+    status: "Verified", hash: "b7c2d5e8f1a3...9c4d", submittedAt: "2025-01-14", verifiedAt: "2025-01-14", verifier: "5FHneW...d1Hi"
+  },
+  {
+    assetId: "5GrwGHI...9012",
+    assetName: "Trade Invoice — Zenith Supplies",
+    contractAddress: "5GrwGHI9012xZenithSupplies",
+    ipfsCid: "QmXabc3ZenithSuppliesInvoice789",
+    zkpHash: "c9d3e6f2a8b51d7e",
+    status: "Pending", hash: "c9d3e6f2a8b5...1d7e", submittedAt: "2025-01-17", verifiedAt: null, verifier: null
+  },
 ];
 
 export default function Privacy() {
@@ -17,17 +38,8 @@ export default function Privacy() {
   const [tab,          setTab]          = useState("verify");
   const [verifyAsset,  setVerifyAsset]  = useState("");
   const [verifyHash,   setVerifyHash]   = useState("");
-  const [myAssets,     setMyAssets]     = useState([]);
-
-  // Load user assets from localStorage
-  useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem("assetdot-assets") || "[]");
-      setMyAssets(saved);
-    } catch(e) { setMyAssets([]); }
-  }, []);
   const [verifying,    setVerifying]    = useState(false);
-  const [verifyResult, setVerifyResult] = useState(null); // null | true | false
+  const [verifyResult, setVerifyResult] = useState(null);
   const [submitAsset,  setSubmitAsset]  = useState("");
   const [submitHash,   setSubmitHash]   = useState("");
   const [submitCid,    setSubmitCid]    = useState("");
@@ -39,7 +51,6 @@ export default function Privacy() {
     setVerifying(true);
     setVerifyResult(null);
     await new Promise((r) => setTimeout(r, 1800));
-    // Simulate: match against mock proof
     const found = MOCK_PROOFS.find(
       (p) => p.status === "Verified" && verifyHash.length > 10
     );
@@ -111,8 +122,8 @@ export default function Privacy() {
               {/* Tab switcher */}
               <div style={{ display: "flex", gap: "0", marginBottom: "20px", background: "var(--bg-muted)", borderRadius: "12px", padding: "4px", width: "fit-content" }}>
                 {[
-                  { id: "verify", label: "Verify Proof"  },
-                  { id: "submit", label: "Submit Proof"  },
+                  { id: "verify", label: "Verify Proof" },
+                  { id: "submit", label: "Submit Proof" },
                 ].map(({ id, label }) => (
                   <button
                     key={id}
@@ -143,32 +154,35 @@ export default function Privacy() {
                     Verify an Asset Proof
                   </h2>
                   <p style={{ fontSize: "13px", color: "var(--text-secondary)", margin: "0 0 20px" }}>
-                    Enter an asset contract address and document hash to verify the proof on-chain.
+                    Select your asset below — the contract address and hash will be filled automatically.
                   </p>
 
-                  {/* Quick select from user's assets */}
-                  {myAssets.length > 0 && (
-                    <div style={{ marginBottom: "14px" }}>
-                      <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Select Your Asset</label>
-                      <select
-                        className="input"
-                        onChange={(e) => {
-                          const asset = myAssets.find(a => a.id === e.target.value);
-                          if (asset) {
-                            setVerifyAsset(asset.contractAddress || asset.id);
-                            setVerifyHash(asset.zkpHash || "");
-                            setVerifyResult(null);
-                          }
-                        }}
-                        style={{ cursor: "pointer" }}
-                      >
-                        <option value="">-- Select an asset --</option>
-                        {myAssets.map((a) => (
-                          <option key={a.id} value={a.id}>{a.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
+                  {/* Asset dropdown — always visible */}
+                  <div style={{ marginBottom: "14px" }}>
+                    <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Select Your Asset</label>
+                    <select
+                      className="input"
+                      onChange={(e) => {
+                        const proof = MOCK_PROOFS.find(p => p.assetId === e.target.value);
+                        if (proof) {
+                          setVerifyAsset(proof.contractAddress);
+                          setVerifyHash(proof.zkpHash);
+                          setVerifyResult(null);
+                        } else {
+                          setVerifyAsset("");
+                          setVerifyHash("");
+                          setVerifyResult(null);
+                        }
+                      }}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <option value="">-- Select an asset --</option>
+                      {MOCK_PROOFS.map((p) => (
+                        <option key={p.assetId} value={p.assetId}>{p.assetName}</option>
+                      ))}
+                    </select>
+                  </div>
+
                   <div style={{ marginBottom: "14px" }}>
                     <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Asset Contract Address</label>
                     <input type="text" placeholder="5Grwva..." value={verifyAsset} onChange={(e) => { setVerifyAsset(e.target.value); setVerifyResult(null); }} className="input" />
@@ -233,33 +247,36 @@ export default function Privacy() {
                     </div>
                   ) : (
                     <>
-                      {/* Quick select from user's tokenized assets */}
-                      {myAssets.length > 0 && (
-                        <div style={{ marginBottom: "14px" }}>
-                          <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Select Your Asset</label>
-                          <select
-                            className="input"
-                            onChange={(e) => {
-                              const asset = myAssets.find(a => a.id === e.target.value);
-                              if (asset) {
-                                setSubmitAsset(asset.contractAddress || asset.id);
-                                setSubmitCid(asset.ipfsCid || "");
-                                setSubmitHash(asset.zkpHash || "");
-                              }
-                            }}
-                            style={{ cursor: "pointer" }}
-                          >
-                            <option value="">-- Select an asset --</option>
-                            {myAssets.map((a) => (
-                              <option key={a.id} value={a.id}>{a.name}</option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
+                      {/* Asset dropdown — always visible */}
+                      <div style={{ marginBottom: "14px" }}>
+                        <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Select Your Asset</label>
+                        <select
+                          className="input"
+                          onChange={(e) => {
+                            const proof = MOCK_PROOFS.find(p => p.assetId === e.target.value);
+                            if (proof) {
+                              setSubmitAsset(proof.contractAddress);
+                              setSubmitCid(proof.ipfsCid);
+                              setSubmitHash(proof.zkpHash);
+                            } else {
+                              setSubmitAsset("");
+                              setSubmitCid("");
+                              setSubmitHash("");
+                            }
+                          }}
+                          style={{ cursor: "pointer" }}
+                        >
+                          <option value="">-- Select an asset --</option>
+                          {MOCK_PROOFS.map((p) => (
+                            <option key={p.assetId} value={p.assetId}>{p.assetName}</option>
+                          ))}
+                        </select>
+                      </div>
+
                       {[
-                        { label: "Asset Contract Address", key: "asset", value: submitAsset, set: setSubmitAsset, placeholder: "5Grwva...", mono: false },
-                        { label: "IPFS CID",               key: "cid",   value: submitCid,   set: setSubmitCid,   placeholder: "QmXabc...", mono: false },
-                        { label: "Document Hash (SHA-256)",key: "hash",  value: submitHash,  set: setSubmitHash,  placeholder: "a3f8e9b2...", mono: true  },
+                        { label: "Asset Contract Address", value: submitAsset, set: setSubmitAsset, placeholder: "5Grwva...",    mono: false },
+                        { label: "IPFS CID",               value: submitCid,   set: setSubmitCid,   placeholder: "QmXabc...",   mono: false },
+                        { label: "Document Hash (SHA-256)",value: submitHash,  set: setSubmitHash,  placeholder: "a3f8e9b2...", mono: true  },
                       ].map(({ label, value, set, placeholder, mono }) => (
                         <div key={label} style={{ marginBottom: "14px" }}>
                           <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>{label}</label>
@@ -282,7 +299,7 @@ export default function Privacy() {
               </h3>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 {MOCK_PROOFS.map((proof, i) => {
-                  const { color, bg, icon: StatusIcon } = statusColors[proof.status] || statusColors.Pending;
+                  const { color, bg } = statusColors[proof.status] || statusColors.Pending;
                   return (
                     <div key={i} style={{ padding: "12px", borderRadius: "10px", background: "var(--bg-muted)", border: "1px solid var(--border)" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "6px" }}>
