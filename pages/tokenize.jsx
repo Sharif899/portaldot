@@ -117,6 +117,7 @@ export default function Tokenize() {
 
     setTxHash(mockTx);
     setMinting(false);
+    setStep(5);
     setShowSuccess(true);
   };
 
