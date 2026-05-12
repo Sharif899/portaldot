@@ -1,6 +1,6 @@
+cat > /mnt/c/Users/Administrator/Downloads/portalrwa/context/WalletContext.jsx << 'EOF'
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 
-// ─── Context shape ────────────────────────────────────────────
 const WalletContext = createContext({
   accounts: [],
   selectedAccount: null,
@@ -13,53 +13,24 @@ const WalletContext = createContext({
   shortAddress: (addr) => addr,
 });
 
-// ─── Helper: shorten a Polkadot address ──────────────────────
-// "5GrwvaEF5...qE2C" → shows first 6 and last 4 chars
 function shortAddress(address) {
   if (!address) return "";
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
-// ─── Provider ─────────────────────────────────────────────────
 export function WalletProvider({ children }) {
   const [accounts, setAccounts]               = useState([]);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [isConnecting, setIsConnecting]       = useState(false);
   const [isConnected, setIsConnected]         = useState(false);
   const [error, setError]                     = useState(null);
+  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
 
-  // On mount: check if user was previously connected
-  useEffect(() => {
-    const saved = localStorage.getItem("portalrwa-account");
-    if (saved) {
-      // Try to silently reconnect
-      silentReconnect(saved);
-    }
-  }, []);
+  // ── NO silent reconnect on mount ──────────────────────────
+  // User must always manually click "Connect Wallet"
+  // This prevents auto-connecting without user's knowledge
 
-  // Silent reconnect — doesn't show the extension popup
-  const silentReconnect = async (savedAddress) => {
-    try {
-      // Dynamic import — Polkadot extension only works in the browser
-      const { web3Accounts, web3Enable } = await import("@polkadot/extension-dapp");
-      const extensions = await web3Enable("PortalRWA");
-      if (extensions.length === 0) return; // Extension not installed
-
-      const allAccounts = await web3Accounts();
-      if (allAccounts.length === 0) return;
-
-      setAccounts(allAccounts);
-      setIsConnected(true);
-
-      // Restore previously selected account if it still exists
-      const found = allAccounts.find((a) => a.address === savedAddress);
-      setSelectedAccount(found || allAccounts[0]);
-    } catch {
-      // Silent fail — user will click connect manually
-    }
-  };
-
-  // Manual connect — called when user clicks "Connect Wallet"
+  // Manual connect — always triggers wallet extension popup
   const connect = useCallback(async () => {
     setIsConnecting(true);
     setError(null);
@@ -67,8 +38,7 @@ export function WalletProvider({ children }) {
     try {
       const { web3Accounts, web3Enable } = await import("@polkadot/extension-dapp");
 
-      // web3Enable registers PortalRWA with the extension
-      // This triggers the extension's permission popup
+      // Always triggers the extension permission popup
       const extensions = await web3Enable("PortalRWA");
 
       if (extensions.length === 0) {
@@ -88,9 +58,7 @@ export function WalletProvider({ children }) {
       setAccounts(allAccounts);
       setSelectedAccount(allAccounts[0]);
       setIsConnected(true);
-
-      // Save address so we can silently reconnect on next visit
-      localStorage.setItem("portalrwa-account", allAccounts[0].address);
+      setError(null);
     } catch (err) {
       setError(err.message || "Failed to connect wallet");
       setIsConnected(false);
@@ -99,22 +67,32 @@ export function WalletProvider({ children }) {
     }
   }, []);
 
-  // Disconnect — clear all wallet state
+  // Disconnect — asks for confirmation first
   const disconnect = useCallback(() => {
+    setShowDisconnectConfirm(true);
+  }, []);
+
+  // Confirmed disconnect
+  const confirmDisconnect = useCallback(() => {
     setAccounts([]);
     setSelectedAccount(null);
     setIsConnected(false);
     setError(null);
+    setShowDisconnectConfirm(false);
+    // Clear any saved state
     localStorage.removeItem("portalrwa-account");
   }, []);
 
-  // Switch active account (when user has multiple accounts)
+  // Cancel disconnect
+  const cancelDisconnect = useCallback(() => {
+    setShowDisconnectConfirm(false);
+  }, []);
+
   const selectAccount = useCallback(
     (address) => {
       const found = accounts.find((a) => a.address === address);
       if (found) {
         setSelectedAccount(found);
-        localStorage.setItem("portalrwa-account", found.address);
       }
     },
     [accounts]
@@ -130,19 +108,115 @@ export function WalletProvider({ children }) {
         error,
         connect,
         disconnect,
+        confirmDisconnect,
+        cancelDisconnect,
+        showDisconnectConfirm,
         selectAccount,
         shortAddress,
       }}
     >
       {children}
+
+      {/* ── Disconnect Confirmation Modal ── */}
+      {showDisconnectConfirm && (
+        <div style={{
+          position:        "fixed",
+          inset:           0,
+          background:      "rgba(0,0,0,0.6)",
+          backdropFilter:  "blur(4px)",
+          display:         "flex",
+          alignItems:      "center",
+          justifyContent:  "center",
+          zIndex:          9999,
+        }}>
+          <div style={{
+            background:   "#1a1a2e",
+            border:       "1px solid #6152f8",
+            borderRadius: "16px",
+            padding:      "32px",
+            maxWidth:     "380px",
+            width:        "90%",
+            textAlign:    "center",
+            boxShadow:    "0 20px 60px rgba(0,0,0,0.5)",
+          }}>
+            {/* Icon */}
+            <div style={{
+              width:        "56px",
+              height:       "56px",
+              borderRadius: "50%",
+              background:   "rgba(255,100,100,0.15)",
+              display:      "flex",
+              alignItems:   "center",
+              justifyContent: "center",
+              margin:       "0 auto 16px",
+              fontSize:     "24px",
+            }}>
+              🔌
+            </div>
+
+            <h3 style={{
+              color:         "#ffffff",
+              fontFamily:    "Syne, sans-serif",
+              fontSize:      "18px",
+              fontWeight:    700,
+              margin:        "0 0 8px",
+            }}>
+              Disconnect Wallet?
+            </h3>
+
+            <p style={{
+              color:       "#aaaaaa",
+              fontSize:    "13px",
+              lineHeight:  1.6,
+              margin:      "0 0 24px",
+            }}>
+              You will be disconnected from PortalRWA. To reconnect, you will need to approve the connection again in your wallet extension.
+            </p>
+
+            <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
+              <button
+                onClick={cancelDisconnect}
+                style={{
+                  padding:      "10px 24px",
+                  borderRadius: "8px",
+                  border:       "1px solid #444",
+                  background:   "transparent",
+                  color:        "#ffffff",
+                  fontSize:     "14px",
+                  fontWeight:   600,
+                  cursor:       "pointer",
+                  flex:         1,
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDisconnect}
+                style={{
+                  padding:      "10px 24px",
+                  borderRadius: "8px",
+                  border:       "none",
+                  background:   "linear-gradient(135deg, #ff4444, #cc2222)",
+                  color:        "#ffffff",
+                  fontSize:     "14px",
+                  fontWeight:   600,
+                  cursor:       "pointer",
+                  flex:         1,
+                }}
+              >
+                Disconnect
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </WalletContext.Provider>
   );
 }
 
-// ─── Hook ─────────────────────────────────────────────────────
-// Usage: const { connect, isConnected, selectedAccount } = useWallet();
 export function useWallet() {
   const ctx = useContext(WalletContext);
   if (!ctx) throw new Error("useWallet must be used inside <WalletProvider>");
   return ctx;
 }
+EOF
