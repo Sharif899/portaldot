@@ -183,8 +183,8 @@ export default function Home() {
               lineHeight:  1.6,
               fontFamily:  "DM Sans, sans-serif",
             }}>
-              Tokenize property, commodities, and invoices on Portaldot L0.
-              Trade fractions, bridge cross-chain, and verify ownership with ZKP privacy.
+              From Lagos real estate to Accra farmland —<br />
+              tokenize, trade, and bridge any asset on Portaldot.
             </p>
 
             {/* CTAs */}
@@ -256,7 +256,7 @@ export default function Home() {
         {/* ── Features bento ── */}
         <section style={{ padding: "80px 0", background: "var(--bg-surface)" }}>
           <div className="page-container">
-            <div style={{ marginBottom: "48px" }}>
+            <div style={{ marginBottom: "28px" }}>
               <p style={{
                 fontSize: "11px", fontWeight: 600, color: "var(--brand)",
                 textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "10px",
