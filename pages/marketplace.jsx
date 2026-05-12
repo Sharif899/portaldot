@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Head from "next/head";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
@@ -19,42 +19,32 @@ const LISTINGS = [
 
 export default function Marketplace() {
   const { isConnected, connect } = useWallet();
-  const [search,       setSearch]       = useState("");
-  const [userListings, setUserListings] = useState([]);
+  const [search,        setSearch]        = useState("");
+  const [typeFilter,    setTypeFilter]    = useState("all");
+  const [sortBy,        setSortBy]        = useState("value");
+  const [selectedAsset, setSelectedAsset] = useState(null);
+  const [quantity,      setQuantity]      = useState("");
+  const [buying,        setBuying]        = useState(false);
+  const [showSuccess,   setShowSuccess]   = useState(false);
 
-  // Load user tokenized assets from localStorage
-  useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem("assetdot-assets") || "[]");
-      setUserListings(saved);
-    } catch(e) { setUserListings([]); }
-  }, []);
-  const [typeFilter,   setTypeFilter]   = useState("all");
-  const [sortBy,       setSortBy]       = useState("value");
-  const [selectedAsset,setSelectedAsset]= useState(null);
-  const [quantity,     setQuantity]     = useState(1);
-  const [buying,       setBuying]       = useState(false);
-  const [showSuccess,  setShowSuccess]  = useState(false);
-
-  // Filter + sort logic
-  const ALL_LISTINGS = [...userListings, ...LISTINGS];
-  const filtered = ALL_LISTINGS
+  const filtered = LISTINGS
     .filter((a) => {
       const matchSearch = a.name.toLowerCase().includes(search.toLowerCase()) ||
                           a.location.toLowerCase().includes(search.toLowerCase());
-      const matchType   = typeFilter === "all"  ? true :
-                          typeFilter === "0"     ? a.assetType === 0 :
-                          typeFilter === "1"     ? a.assetType === 1 :
-                          typeFilter === "2"     ? a.assetType === 2 : true;
+      const matchType   = typeFilter === "all" ? true :
+                          typeFilter === "0"    ? a.assetType === 0 :
+                          typeFilter === "1"    ? a.assetType === 1 :
+                          typeFilter === "2"    ? a.assetType === 2 : true;
       return matchSearch && matchType;
     })
     .sort((a, b) =>
-      sortBy === "value"    ? b.valueUsd - a.valueUsd :
-      sortBy === "price"    ? a.pricePerFraction - b.pricePerFraction :
-      sortBy === "available"? b.fractionsAvailable - a.fractionsAvailable : 0
+      sortBy === "value"     ? b.valueUsd - a.valueUsd :
+      sortBy === "price"     ? a.pricePerFraction - b.pricePerFraction :
+      sortBy === "available" ? b.fractionsAvailable - a.fractionsAvailable : 0
     );
 
   const handleBuy = async () => {
+    if (!quantity || Number(quantity) < 1) return;
     setBuying(true);
     await new Promise((r) => setTimeout(r, 2000));
     setBuying(false);
@@ -62,11 +52,12 @@ export default function Marketplace() {
     setShowSuccess(true);
   };
 
-  const totalCost = selectedAsset ? (quantity * selectedAsset.pricePerFraction).toFixed(4) : 0;
+  const qty = Number(quantity) || 0;
+  const totalCost = selectedAsset ? (qty * selectedAsset.pricePerFraction).toFixed(4) : 0;
 
   return (
     <>
-      <Head><title>Marketplace — AssetDot</title></Head>
+      <Head><title>Marketplace — PortalRWA</title></Head>
       <Navbar />
 
       <div style={{ display: "flex", minHeight: "calc(100vh - 64px)" }}>
@@ -86,7 +77,6 @@ export default function Marketplace() {
 
           {/* Search + filters */}
           <div style={{ display: "flex", gap: "10px", marginBottom: "24px", flexWrap: "wrap" }}>
-            {/* Search */}
             <div style={{ position: "relative", flex: 1, minWidth: "200px" }}>
               <Search size={15} color="var(--text-muted)" style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)" }} />
               <input
@@ -99,38 +89,24 @@ export default function Marketplace() {
               />
             </div>
 
-            {/* Type filter */}
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="input"
-              style={{ width: "auto", paddingRight: "32px", cursor: "pointer" }}
-            >
+            <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="input" style={{ width: "auto", paddingRight: "32px", cursor: "pointer" }}>
               <option value="all">All Types</option>
               <option value="0">Property</option>
               <option value="1">Commodity</option>
               <option value="2">Invoice</option>
             </select>
 
-            {/* Sort */}
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="input"
-              style={{ width: "auto", paddingRight: "32px", cursor: "pointer" }}
-            >
+            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="input" style={{ width: "auto", paddingRight: "32px", cursor: "pointer" }}>
               <option value="value">Sort: Highest Value</option>
               <option value="price">Sort: Lowest Price</option>
               <option value="available">Sort: Most Available</option>
             </select>
           </div>
 
-          {/* Results count */}
           <p style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "16px" }}>
             Showing {filtered.length} of {LISTINGS.length} listings
           </p>
 
-          {/* Asset grid */}
           {filtered.length === 0 ? (
             <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--text-muted)" }}>
               <SlidersHorizontal size={32} style={{ marginBottom: "10px" }} />
@@ -146,7 +122,7 @@ export default function Marketplace() {
                   onTrade={(a) => {
                     if (!isConnected) { connect(); return; }
                     setSelectedAsset(a);
-                    setQuantity(1);
+                    setQuantity("");
                   }}
                 />
               ))}
@@ -156,12 +132,7 @@ export default function Marketplace() {
       </div>
 
       {/* Buy modal */}
-      <Modal
-        isOpen={!!selectedAsset}
-        onClose={() => setSelectedAsset(null)}
-        title="Buy Fractions"
-        size="sm"
-      >
+      <Modal isOpen={!!selectedAsset} onClose={() => setSelectedAsset(null)} title="Buy Fractions" size="sm">
         {selectedAsset && (
           <div>
             <div style={{ padding: "12px", borderRadius: "10px", background: "var(--bg-muted)", marginBottom: "16px" }}>
@@ -178,7 +149,14 @@ export default function Marketplace() {
                 min="1"
                 max={selectedAsset.fractionsAvailable}
                 value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
+                placeholder="Enter amount"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "") { setQuantity(""); return; }
+                  const num = Number(val);
+                  if (num > selectedAsset.fractionsAvailable) return;
+                  setQuantity(val);
+                }}
                 className="input"
               />
               <p style={{ fontSize: "11px", color: "var(--text-muted)", margin: "4px 0 0" }}>
@@ -186,10 +164,9 @@ export default function Marketplace() {
               </p>
             </div>
 
-            {/* Cost breakdown */}
             {[
               { label: "Price per fraction", value: `${selectedAsset.pricePerFraction} POT` },
-              { label: "Quantity",           value: quantity.toLocaleString()               },
+              { label: "Quantity",           value: qty.toLocaleString()                    },
               { label: "Platform fee (1%)",  value: `${(totalCost * 0.01).toFixed(4)} POT` },
               { label: "Total cost",         value: `${totalCost} POT`, bold: true          },
             ].map(({ label, value, bold }) => (
@@ -199,8 +176,13 @@ export default function Marketplace() {
               </div>
             ))}
 
-            <Button variant="primary" fullWidth loading={buying} icon={ShoppingCart} style={{ marginTop: "16px" }} onClick={handleBuy}>
-              {buying ? "Processing..." : `Buy ${quantity.toLocaleString()} Fractions`}
+            <Button
+              variant="primary" fullWidth loading={buying} icon={ShoppingCart}
+              style={{ marginTop: "16px" }}
+              onClick={handleBuy}
+              disabled={!quantity || qty < 1}
+            >
+              {buying ? "Processing..." : `Buy ${qty.toLocaleString() || 0} Fractions`}
             </Button>
           </div>
         )}
