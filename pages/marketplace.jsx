@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Head from "next/head";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
@@ -25,15 +25,25 @@ export default function Marketplace() {
   const [quantity,      setQuantity]      = useState("");
   const [buying,        setBuying]        = useState(false);
   const [showSuccess,   setShowSuccess]   = useState(false);
+  const [userListings,  setUserListings]  = useState([]);
 
-  const filtered = LISTINGS
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("assetdot-assets") || "[]");
+      setUserListings(saved);
+    } catch(e) { setUserListings([]); }
+  }, []);
+
+  const ALL_LISTINGS = [...userListings, ...LISTINGS];
+
+  const filtered = ALL_LISTINGS
     .filter((a) => {
       const matchSearch = a.name.toLowerCase().includes(search.toLowerCase()) ||
                           a.location.toLowerCase().includes(search.toLowerCase());
       const matchType   = typeFilter === "all" ? true :
-                          typeFilter === "0"    ? a.assetType === 0 :
-                          typeFilter === "1"    ? a.assetType === 1 :
-                          typeFilter === "2"    ? a.assetType === 2 : true;
+                          typeFilter === "0"    ? Number(a.assetType) === 0 :
+                          typeFilter === "1"    ? Number(a.assetType) === 1 :
+                          typeFilter === "2"    ? Number(a.assetType) === 2 : true;
       return matchSearch && matchType;
     })
     .sort((a, b) =>
@@ -56,7 +66,7 @@ export default function Marketplace() {
 
   return (
     <>
-      <Head><title>Marketplace — PortalRWA</title></Head>
+      <Head><title>Marketplace — AssetDot</title></Head>
       <Navbar />
 
       <div style={{ display: "flex", minHeight: "calc(100vh - 64px)" }}>
@@ -70,7 +80,7 @@ export default function Marketplace() {
               Marketplace
             </h1>
             <p style={{ color: "var(--text-secondary)", fontSize: "13px", margin: 0 }}>
-              {LISTINGS.length} assets listed · Buy fractions of real-world assets
+              {ALL_LISTINGS.length} assets listed · Buy fractions of real-world assets
             </p>
           </div>
 
@@ -103,7 +113,7 @@ export default function Marketplace() {
           </div>
 
           <p style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "16px" }}>
-            Showing {filtered.length} of {LISTINGS.length} listings
+            Showing {filtered.length} of {ALL_LISTINGS.length} listings
           </p>
 
           {filtered.length === 0 ? (
