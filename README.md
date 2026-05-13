@@ -6,7 +6,7 @@
 
 ## 🎥 Demo Video
 
-> **[Watch Demo](https://youtube.com/DEMO_LINK_HERE)**
+> **[Watch Demo](https://youtu.be/yNQt_mSGERs)**
 
 ## 🔴 Live App
 
@@ -174,7 +174,7 @@ The LAO NPoS consensus with hot-upgrade capability means AssetDot can evolve wit
 
 ## 👤 Builder
 
-Sharif — Builder / Product
+Sharif899 — Builder / Product
 
 ---
 
