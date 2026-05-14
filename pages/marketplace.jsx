@@ -32,7 +32,7 @@ export default function Marketplace() {
   const [typeFilter,   setTypeFilter]   = useState("all");
   const [sortBy,       setSortBy]       = useState("value");
   const [selectedAsset,setSelectedAsset]= useState(null);
-  const [quantity,     setQuantity]     = useState(1);
+  const [quantity,     setQuantity]     = useState("");
   const [buying,       setBuying]       = useState(false);
   const [showSuccess,  setShowSuccess]  = useState(false);
 
@@ -62,7 +62,7 @@ export default function Marketplace() {
     setShowSuccess(true);
   };
 
-  const totalCost = selectedAsset ? (quantity * selectedAsset.pricePerFraction).toFixed(4) : 0;
+  const totalCost = selectedAsset ? ((Number(quantity) || 0) * selectedAsset.pricePerFraction).toFixed(4) : 0;
 
   return (
     <>
@@ -146,7 +146,7 @@ export default function Marketplace() {
                   onTrade={(a) => {
                     if (!isConnected) { connect(); return; }
                     setSelectedAsset(a);
-                    setQuantity(1);
+                    setQuantity("");
                   }}
                 />
               ))}
@@ -175,10 +175,16 @@ export default function Marketplace() {
               </label>
               <input
                 type="number"
-                min="1"
+                min="0"
                 max={selectedAsset.fractionsAvailable}
+                placeholder="Enter amount"
                 value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "") { setQuantity(""); return; }
+                  const num = Number(val);
+                  if (!isNaN(num) && num >= 0) setQuantity(num);
+                }}
                 className="input"
               />
               <p style={{ fontSize: "11px", color: "var(--text-muted)", margin: "4px 0 0" }}>
@@ -189,9 +195,9 @@ export default function Marketplace() {
             {/* Cost breakdown */}
             {[
               { label: "Price per fraction", value: `${selectedAsset.pricePerFraction} POT` },
-              { label: "Quantity",           value: quantity.toLocaleString()               },
-              { label: "Platform fee (1%)",  value: `${(totalCost * 0.01).toFixed(4)} POT` },
-              { label: "Total cost",         value: `${totalCost} POT`, bold: true          },
+              { label: "Quantity",           value: (Number(quantity) || 0).toLocaleString() },
+              { label: "Platform fee (1%)",  value: `${(totalCost * 0.01).toFixed(4)} POT`  },
+              { label: "Total cost",         value: `${totalCost} POT`, bold: true           },
             ].map(({ label, value, bold }) => (
               <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
                 <span style={{ fontSize: "13px", color: "var(--text-secondary)" }}>{label}</span>
@@ -200,7 +206,7 @@ export default function Marketplace() {
             ))}
 
             <Button variant="primary" fullWidth loading={buying} icon={ShoppingCart} style={{ marginTop: "16px" }} onClick={handleBuy}>
-              {buying ? "Processing..." : `Buy ${quantity.toLocaleString()} Fractions`}
+              {buying ? "Processing..." : `Buy ${(Number(quantity) || 0).toLocaleString()} Fractions`}
             </Button>
           </div>
         )}
