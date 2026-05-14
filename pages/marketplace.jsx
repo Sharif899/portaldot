@@ -6,29 +6,41 @@ import AssetCard from "@/components/ui/AssetCard";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import { useWallet } from "@/context/WalletContext";
+import { supabase } from "@/lib/supabaseClient";
 import { Search, SlidersHorizontal, ShoppingCart, CheckCircle2 } from "lucide-react";
 
-const LISTINGS = [
-  { id:"1", name:"Lagos Island Apartment Block A", assetType:0, valueUsd:250000, fractions:1000000, fractionsAvailable:750000, pricePerFraction:0.35, owner:"5Grwva...utQY", ipfsCid:"QmXabc123", isVerified:true,  status:"Active",  location:"Lagos, Nigeria"    },
-  { id:"2", name:"Cocoa Export Batch #2024-11",    assetType:1, valueUsd:85000,  fractions:500000,  fractionsAvailable:320000, pricePerFraction:0.22, owner:"5FHneW...d1Hi", ipfsCid:"QmYdef456", isVerified:true,  status:"Active",  location:"Accra, Ghana"      },
-  { id:"3", name:"Abuja Commercial Plaza Unit 4",  assetType:0, valueUsd:180000, fractions:800000,  fractionsAvailable:600000, pricePerFraction:0.28, owner:"5DAAnr...hxCz", ipfsCid:"QmZghi789", isVerified:true,  status:"Active",  location:"Abuja, Nigeria"    },
-  { id:"4", name:"Palm Oil Futures Q1 2025",       assetType:1, valueUsd:45000,  fractions:200000,  fractionsAvailable:120000, pricePerFraction:0.18, owner:"5HGjYb...9eVX", ipfsCid:"QmAjkl012", isVerified:false, status:"Active",  location:"Port Harcourt, NG" },
-  { id:"5", name:"Logistics Invoice — DHL Africa", assetType:2, valueUsd:28000,  fractions:100000,  fractionsAvailable:80000,  pricePerFraction:0.38, owner:"5CiPPu...dCJu", ipfsCid:"QmBmno345", isVerified:true,  status:"Active",  location:"Nairobi, Kenya"    },
-  { id:"6", name:"Nairobi Office Complex Floor 3", assetType:0, valueUsd:320000, fractions:1500000, fractionsAvailable:50000,  pricePerFraction:0.29, owner:"5Grwva...utQY", ipfsCid:"QmCpqr678", isVerified:true,  status:"Active",  location:"Nairobi, Kenya"    },
+// Hardcoded baseline listings (Mr A's curated assets)
+const STATIC_LISTINGS = [
+  { id:"1", name:"Lagos Island Apartment Block A", assetType:0, valueUsd:250000, fractions:1000000, fractionsAvailable:750000, pricePerFraction:0.35, owner:"5Grwva...utQY", ipfsCid:"QmXabc123", isVerified:true,  status:"Active", location:"Lagos, Nigeria"    },
+  { id:"2", name:"Cocoa Export Batch #2024-11",    assetType:1, valueUsd:85000,  fractions:500000,  fractionsAvailable:320000, pricePerFraction:0.22, owner:"5FHneW...d1Hi", ipfsCid:"QmYdef456", isVerified:true,  status:"Active", location:"Accra, Ghana"      },
+  { id:"3", name:"Abuja Commercial Plaza Unit 4",  assetType:0, valueUsd:180000, fractions:800000,  fractionsAvailable:600000, pricePerFraction:0.28, owner:"5DAAnr...hxCz", ipfsCid:"QmZghi789", isVerified:true,  status:"Active", location:"Abuja, Nigeria"    },
+  { id:"4", name:"Palm Oil Futures Q1 2025",       assetType:1, valueUsd:45000,  fractions:200000,  fractionsAvailable:120000, pricePerFraction:0.18, owner:"5HGjYb...9eVX", ipfsCid:"QmAjkl012", isVerified:false, status:"Active", location:"Port Harcourt, NG" },
+  { id:"5", name:"Logistics Invoice — DHL Africa", assetType:2, valueUsd:28000,  fractions:100000,  fractionsAvailable:80000,  pricePerFraction:0.38, owner:"5CiPPu...dCJu", ipfsCid:"QmBmno345", isVerified:true,  status:"Active", location:"Nairobi, Kenya"   },
+  { id:"6", name:"Nairobi Office Complex Floor 3", assetType:0, valueUsd:320000, fractions:1500000, fractionsAvailable:50000,  pricePerFraction:0.29, owner:"5Grwva...utQY", ipfsCid:"QmCpqr678", isVerified:true,  status:"Active", location:"Nairobi, Kenya"   },
 ];
+
+// Map Supabase row → shape the rest of the app expects
+const mapRow = (row) => ({
+  id:                  row.id,
+  name:                row.name,
+  assetType:           row.asset_type,
+  valueUsd:            row.value_usd,
+  fractions:           row.fractions,
+  fractionsAvailable:  row.fractions_available,
+  pricePerFraction:    row.price_per_fraction,
+  owner:               row.owner,
+  ipfsCid:             row.ipfs_cid,
+  isVerified:          row.is_verified,
+  status:              row.status,
+  location:            row.location,
+});
 
 export default function Marketplace() {
   const { isConnected, connect } = useWallet();
-  const [search,       setSearch]       = useState("");
-  const [userListings, setUserListings] = useState([]);
 
-  // Load user tokenized assets from localStorage
-  useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem("assetdot-assets") || "[]");
-      setUserListings(saved);
-    } catch(e) { setUserListings([]); }
-  }, []);
+  const [dbListings,   setDbListings]   = useState([]);
+  const [loading,      setLoading]      = useState(true);
+  const [search,       setSearch]       = useState("");
   const [typeFilter,   setTypeFilter]   = useState("all");
   const [sortBy,       setSortBy]       = useState("value");
   const [selectedAsset,setSelectedAsset]= useState(null);
@@ -36,22 +48,44 @@ export default function Marketplace() {
   const [buying,       setBuying]       = useState(false);
   const [showSuccess,  setShowSuccess]  = useState(false);
 
-  // Filter + sort logic
-  const ALL_LISTINGS = [...userListings, ...LISTINGS];
+  // ── Fetch all assets from Supabase on mount ───────────────────
+  useEffect(() => {
+    const fetchAssets = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("assetdot")
+        .select("*")
+        .eq("status", "Active")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Supabase fetch error:", error);
+      } else {
+        setDbListings((data || []).map(mapRow));
+      }
+      setLoading(false);
+    };
+
+    fetchAssets();
+  }, []);
+
+  // Merge static + DB listings (DB first so newest appear at top)
+  const ALL_LISTINGS = [...dbListings, ...STATIC_LISTINGS];
+
   const filtered = ALL_LISTINGS
     .filter((a) => {
       const matchSearch = a.name.toLowerCase().includes(search.toLowerCase()) ||
                           a.location.toLowerCase().includes(search.toLowerCase());
-      const matchType   = typeFilter === "all"  ? true :
-                          typeFilter === "0"     ? a.assetType === 0 :
-                          typeFilter === "1"     ? a.assetType === 1 :
-                          typeFilter === "2"     ? a.assetType === 2 : true;
+      const matchType   = typeFilter === "all" ? true :
+                          typeFilter === "0"    ? a.assetType === 0 :
+                          typeFilter === "1"    ? a.assetType === 1 :
+                          typeFilter === "2"    ? a.assetType === 2 : true;
       return matchSearch && matchType;
     })
     .sort((a, b) =>
-      sortBy === "value"    ? b.valueUsd - a.valueUsd :
-      sortBy === "price"    ? a.pricePerFraction - b.pricePerFraction :
-      sortBy === "available"? b.fractionsAvailable - a.fractionsAvailable : 0
+      sortBy === "value"     ? b.valueUsd - a.valueUsd :
+      sortBy === "price"     ? a.pricePerFraction - b.pricePerFraction :
+      sortBy === "available" ? b.fractionsAvailable - a.fractionsAvailable : 0
     );
 
   const handleBuy = async () => {
@@ -62,7 +96,9 @@ export default function Marketplace() {
     setShowSuccess(true);
   };
 
-  const totalCost = selectedAsset ? ((Number(quantity) || 0) * selectedAsset.pricePerFraction).toFixed(4) : 0;
+  const totalCost = selectedAsset
+    ? ((Number(quantity) || 0) * selectedAsset.pricePerFraction).toFixed(4)
+    : 0;
 
   return (
     <>
@@ -76,17 +112,19 @@ export default function Marketplace() {
 
           {/* Header */}
           <div style={{ marginBottom: "24px" }}>
-            <h1 style={{ fontFamily: "Syne, sans-serif", fontSize: "26px", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 4px", letterSpacing: "-0.02em" }}>
+            <h1 style={{
+              fontFamily: "Syne, sans-serif", fontSize: "26px", fontWeight: 700,
+              color: "var(--text-primary)", margin: "0 0 4px", letterSpacing: "-0.02em",
+            }}>
               Marketplace
             </h1>
             <p style={{ color: "var(--text-secondary)", fontSize: "13px", margin: 0 }}>
-              {LISTINGS.length} assets listed · Buy fractions of real-world assets
+              {ALL_LISTINGS.length} assets listed · Buy fractions of real-world assets
             </p>
           </div>
 
           {/* Search + filters */}
           <div style={{ display: "flex", gap: "10px", marginBottom: "24px", flexWrap: "wrap" }}>
-            {/* Search */}
             <div style={{ position: "relative", flex: 1, minWidth: "200px" }}>
               <Search size={15} color="var(--text-muted)" style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)" }} />
               <input
@@ -99,26 +137,14 @@ export default function Marketplace() {
               />
             </div>
 
-            {/* Type filter */}
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="input"
-              style={{ width: "auto", paddingRight: "32px", cursor: "pointer" }}
-            >
+            <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="input" style={{ width: "auto", paddingRight: "32px", cursor: "pointer" }}>
               <option value="all">All Types</option>
               <option value="0">Property</option>
               <option value="1">Commodity</option>
               <option value="2">Invoice</option>
             </select>
 
-            {/* Sort */}
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="input"
-              style={{ width: "auto", paddingRight: "32px", cursor: "pointer" }}
-            >
+            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="input" style={{ width: "auto", paddingRight: "32px", cursor: "pointer" }}>
               <option value="value">Sort: Highest Value</option>
               <option value="price">Sort: Lowest Price</option>
               <option value="available">Sort: Most Available</option>
@@ -127,11 +153,15 @@ export default function Marketplace() {
 
           {/* Results count */}
           <p style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "16px" }}>
-            Showing {filtered.length} of {LISTINGS.length} listings
+            {loading ? "Loading assets..." : `Showing ${filtered.length} of ${ALL_LISTINGS.length} listings`}
           </p>
 
           {/* Asset grid */}
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--text-muted)" }}>
+              <p>Loading marketplace...</p>
+            </div>
+          ) : filtered.length === 0 ? (
             <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--text-muted)" }}>
               <SlidersHorizontal size={32} style={{ marginBottom: "10px" }} />
               <p>No assets match your filters</p>
@@ -156,12 +186,7 @@ export default function Marketplace() {
       </div>
 
       {/* Buy modal */}
-      <Modal
-        isOpen={!!selectedAsset}
-        onClose={() => setSelectedAsset(null)}
-        title="Buy Fractions"
-        size="sm"
-      >
+      <Modal isOpen={!!selectedAsset} onClose={() => setSelectedAsset(null)} title="Buy Fractions" size="sm">
         {selectedAsset && (
           <div>
             <div style={{ padding: "12px", borderRadius: "10px", background: "var(--bg-muted)", marginBottom: "16px" }}>
@@ -192,12 +217,11 @@ export default function Marketplace() {
               </p>
             </div>
 
-            {/* Cost breakdown */}
             {[
-              { label: "Price per fraction", value: `${selectedAsset.pricePerFraction} POT` },
-              { label: "Quantity",           value: (Number(quantity) || 0).toLocaleString() },
-              { label: "Platform fee (1%)",  value: `${(totalCost * 0.01).toFixed(4)} POT`  },
-              { label: "Total cost",         value: `${totalCost} POT`, bold: true           },
+              { label: "Price per fraction", value: `${selectedAsset.pricePerFraction} POT`          },
+              { label: "Quantity",           value: (Number(quantity) || 0).toLocaleString()          },
+              { label: "Platform fee (1%)",  value: `${(totalCost * 0.01).toFixed(4)} POT`           },
+              { label: "Total cost",         value: `${totalCost} POT`, bold: true                    },
             ].map(({ label, value, bold }) => (
               <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
                 <span style={{ fontSize: "13px", color: "var(--text-secondary)" }}>{label}</span>
@@ -219,7 +243,7 @@ export default function Marketplace() {
           <p style={{ fontSize: "14px", color: "var(--text-secondary)", margin: "0 0 16px" }}>
             Your fractions have been transferred to your wallet successfully.
           </p>
-          <Button variant="primary" fullWidth onClick={() => { setShowSuccess(false); window.location.href="/dashboard"; }}>
+          <Button variant="primary" fullWidth onClick={() => { setShowSuccess(false); window.location.href = "/dashboard"; }}>
             View in Dashboard
           </Button>
         </div>
