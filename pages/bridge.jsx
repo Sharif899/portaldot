@@ -16,21 +16,23 @@ const CHAINS = [
 ];
 
 const MOCK_ASSETS = [
-  { id: "1", name: "Lagos Island Apartment Block A", symbol: "LIAB",  balance: 750000 },
+  { id: "1", name: "Lagos Island Apartment Block A", symbol: "LIAB", balance: 750000 },
   { id: "2", name: "Cocoa Export Batch #2024-11",    symbol: "CEB24", balance: 320000 },
 ];
 
 export default function Bridge() {
   const { isConnected, connect } = useWallet();
-  const [userAssets,    setUserAssets]    = useState([]);
+  const [userAssets,  setUserAssets]  = useState([]);
   const [selectedAsset, setSelectedAsset] = useState(MOCK_ASSETS[0]);
-  const [fromChain,     setFromChain]     = useState("portaldot");
-  const [toChain,       setToChain]       = useState("polkadot");
-  const [amount,        setAmount]        = useState("");
-  const [bridging,      setBridging]      = useState(false);
-  const [txStep,        setTxStep]        = useState(0); // 0=idle 1=approving 2=locking 3=minting 4=done
-  const [showTx,        setShowTx]        = useState(false);
+  const [fromChain,   setFromChain]   = useState("portaldot");
+  const [toChain,     setToChain]     = useState("polkadot");
 
+  const [amount,      setAmount]      = useState("");
+  const [bridging,    setBridging]    = useState(false);
+  const [txStep,      setTxStep]      = useState(0); // 0=idle 1=approving 2=locking 3=minting 4=done
+  const [showTx,      setShowTx]      = useState(false);
+
+  // Load user assets from localStorage
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem("assetdot-assets") || "[]");
@@ -48,6 +50,8 @@ export default function Bridge() {
     if (!amount || Number(amount) <= 0) return;
     setShowTx(true);
     setBridging(true);
+
+    // Simulate multi-step bridge transaction
     for (let s = 1; s <= 4; s++) {
       await new Promise((r) => setTimeout(r, 1500));
       setTxStep(s);
@@ -62,7 +66,8 @@ export default function Bridge() {
     "Bridge complete!",
   ];
 
-  const ALL_BRIDGE_ASSETS = [...userAssets, ...MOCK_ASSETS];
+  const MOCK_ASSETS_STATIC = MOCK_ASSETS;
+  const ALL_BRIDGE_ASSETS = [...userAssets, ...MOCK_ASSETS_STATIC];
   const fromChainInfo = CHAINS.find((c) => c.id === fromChain);
   const toChainInfo   = CHAINS.find((c) => c.id === toChain);
 
@@ -92,6 +97,7 @@ export default function Bridge() {
         <main style={{ flex: 1, padding: "32px", overflowY: "auto", background: "var(--bg-base)" }}>
           <div style={{ maxWidth: "560px" }}>
 
+            {/* Header */}
             <div style={{ marginBottom: "28px" }}>
               <h1 style={{ fontFamily: "Syne, sans-serif", fontSize: "26px", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 4px", letterSpacing: "-0.02em" }}>
                 Cross-Chain Bridge
@@ -101,33 +107,65 @@ export default function Bridge() {
               </p>
             </div>
 
+            {/* Bridge card */}
             <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: "20px", padding: "24px" }}>
 
               {/* Chain selector row */}
               <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
+                {/* From chain */}
                 <div style={{ flex: 1 }}>
                   <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: "6px" }}>From</label>
-                  <select value={fromChain} onChange={(e) => setFromChain(e.target.value)} className="input" style={{ cursor: "pointer" }}>
+                  <select
+                    value={fromChain}
+                    onChange={(e) => setFromChain(e.target.value)}
+                    className="input"
+                    style={{ cursor: "pointer" }}
+                  >
                     {CHAINS.map((c) => (
-                      <option key={c.id} value={c.id} disabled={c.id === toChain}>{c.logo} {c.name}</option>
+                      <option key={c.id} value={c.id} disabled={c.id === toChain}>
+                        {c.logo} {c.name}
+                      </option>
                     ))}
                   </select>
                 </div>
 
+                {/* Swap button */}
                 <button
                   onClick={swapChains}
-                  style={{ width: "36px", height: "36px", borderRadius: "50%", border: "1px solid var(--border)", background: "var(--bg-muted)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-secondary)", flexShrink: 0, marginTop: "18px", transition: "all 0.2s ease" }}
+                  style={{
+                    width:        "36px",
+                    height:       "36px",
+                    borderRadius: "50%",
+                    border:       "1px solid var(--border)",
+                    background:   "var(--bg-muted)",
+                    display:      "flex",
+                    alignItems:   "center",
+                    justifyContent: "center",
+                    cursor:       "pointer",
+                    color:        "var(--text-secondary)",
+                    flexShrink:   0,
+                    marginTop:    "18px",
+                    transition:   "all 0.2s ease",
+                  }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = "var(--brand-dim)"; e.currentTarget.style.color = "var(--brand)"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = "var(--bg-muted)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
                 >
                   <ArrowLeftRight size={15} />
                 </button>
 
+                {/* To chain */}
                 <div style={{ flex: 1 }}>
                   <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: "6px" }}>To</label>
-                  <select value={toChain} onChange={(e) => setToChain(e.target.value)} className="input" style={{ cursor: "pointer" }}>
+                  <select
+                    value={toChain}
+                    onChange={(e) => setToChain(e.target.value)}
+                    className="input"
+                    style={{ cursor: "pointer" }}
+                  >
                     {CHAINS.map((c) => (
-                      <option key={c.id} value={c.id} disabled={c.id === fromChain}>{c.logo} {c.name}</option>
+                      <option key={c.id} value={c.id} disabled={c.id === fromChain}>
+                        {c.logo} {c.name}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -135,11 +173,15 @@ export default function Bridge() {
 
               {/* Route display */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", padding: "10px", borderRadius: "10px", background: "var(--bg-muted)", marginBottom: "20px" }}>
-                <span style={{ fontSize: "13px", color: "var(--text-primary)", fontWeight: 600 }}>{fromChainInfo?.logo} {fromChainInfo?.name}</span>
+                <span style={{ fontSize: "13px", color: "var(--text-primary)", fontWeight: 600 }}>
+                  {fromChainInfo?.logo} {fromChainInfo?.name}
+                </span>
                 <ArrowRight size={14} color="var(--text-muted)" />
                 <span style={{ fontSize: "11px", color: "var(--brand)", fontWeight: 600 }}>iBridge</span>
                 <ArrowRight size={14} color="var(--text-muted)" />
-                <span style={{ fontSize: "13px", color: "var(--text-primary)", fontWeight: 600 }}>{toChainInfo?.logo} {toChainInfo?.name}</span>
+                <span style={{ fontSize: "13px", color: "var(--text-primary)", fontWeight: 600 }}>
+                  {toChainInfo?.logo} {toChainInfo?.name}
+                </span>
               </div>
 
               {/* Asset selector */}
@@ -150,7 +192,17 @@ export default function Bridge() {
                     <div
                       key={asset.id}
                       onClick={() => setSelectedAsset(asset)}
-                      style={{ padding: "12px", borderRadius: "10px", border: `1px solid ${selectedAsset?.id === asset.id ? "var(--brand)" : "var(--border)"}`, background: selectedAsset?.id === asset.id ? "var(--brand-dim)" : "var(--bg-muted)", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", transition: "all 0.15s ease" }}
+                      style={{
+                        padding:      "12px",
+                        borderRadius: "10px",
+                        border:       `1px solid ${selectedAsset?.id === asset.id ? "var(--brand)" : "var(--border)"}`,
+                        background:   selectedAsset?.id === asset.id ? "var(--brand-dim)" : "var(--bg-muted)",
+                        cursor:       "pointer",
+                        display:      "flex",
+                        justifyContent: "space-between",
+                        alignItems:   "center",
+                        transition:   "all 0.15s ease",
+                      }}
                     >
                       <div>
                         <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>{asset.symbol}</p>
@@ -168,10 +220,30 @@ export default function Bridge() {
               <div style={{ marginBottom: "16px" }}>
                 <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Amount (fractions)</label>
                 <div style={{ position: "relative" }}>
-                  <input type="number" placeholder="0" value={amount} onChange={(e) => setAmount(e.target.value)} className="input" style={{ paddingRight: "80px" }} />
+                  <input
+                    type="number"
+                    placeholder="0"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="input"
+                    style={{ paddingRight: "80px" }}
+                  />
                   <button
                     onClick={() => setAmount(selectedAsset?.balance || 0)}
-                    style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", fontSize: "11px", fontWeight: 600, color: "var(--brand)", background: "var(--brand-dim)", border: "none", borderRadius: "6px", padding: "3px 8px", cursor: "pointer" }}
+                    style={{
+                      position:   "absolute",
+                      right:      "10px",
+                      top:        "50%",
+                      transform:  "translateY(-50%)",
+                      fontSize:   "11px",
+                      fontWeight: 600,
+                      color:      "var(--brand)",
+                      background: "var(--brand-dim)",
+                      border:     "none",
+                      borderRadius:"6px",
+                      padding:    "3px 8px",
+                      cursor:     "pointer",
+                    }}
                   >
                     MAX
                   </button>
@@ -191,7 +263,14 @@ export default function Bridge() {
                 </p>
               </div>
 
-              <Button variant="primary" fullWidth size="lg" icon={GitMerge} onClick={handleBridge} disabled={!amount || Number(amount) <= 0}>
+              <Button
+                variant="primary"
+                fullWidth
+                size="lg"
+                icon={GitMerge}
+                onClick={handleBridge}
+                disabled={!amount || Number(amount) <= 0}
+              >
                 Bridge to {toChainInfo?.name}
               </Button>
             </div>
@@ -204,22 +283,20 @@ export default function Bridge() {
         <div>
           {STEPS_LABELS.map((label, i) => {
             const stepNum = i + 1;
-            // A step is "done" when txStep has moved past it, OR when txStep === 4 (all complete, including the last step)
-            const done   = txStep > stepNum || (txStep === 4 && stepNum === 4);
-            const active = txStep === stepNum && txStep !== 4;
-
+            const done    = txStep > stepNum;
+            const active  = txStep === stepNum;
             return (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 0", borderBottom: i < 3 ? "1px solid var(--border)" : "none" }}>
                 <div style={{
-                  width:          "28px",
-                  height:         "28px",
-                  borderRadius:   "50%",
-                  background:     done ? "var(--accent-green)" : active ? "var(--brand)" : "var(--bg-muted)",
-                  display:        "flex",
-                  alignItems:     "center",
+                  width:        "28px",
+                  height:       "28px",
+                  borderRadius: "50%",
+                  background:   done ? "var(--accent-green)" : active ? "var(--brand)" : "var(--bg-muted)",
+                  display:      "flex",
+                  alignItems:   "center",
                   justifyContent: "center",
-                  flexShrink:     0,
-                  transition:     "all 0.3s ease",
+                  flexShrink:   0,
+                  transition:   "all 0.3s ease",
                 }}>
                   {done
                     ? <CheckCircle2 size={14} color="#fff" />
@@ -228,7 +305,7 @@ export default function Bridge() {
                       : <span style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: 600 }}>{stepNum}</span>
                   }
                 </div>
-                <span style={{ fontSize: "13px", color: done ? "var(--accent-green)" : active ? "var(--text-primary)" : "var(--text-muted)", fontWeight: active || done ? 600 : 400 }}>
+                <span style={{ fontSize: "13px", color: done ? "var(--accent-green)" : active ? "var(--text-primary)" : "var(--text-muted)", fontWeight: active ? 600 : 400 }}>
                   {label}
                 </span>
               </div>
