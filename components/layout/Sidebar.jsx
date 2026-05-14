@@ -51,7 +51,7 @@ export default function Sidebar() {
   const isActive = (href) => router.pathname === href;
 
   return (
-    <aside style={{
+    <aside className="sidebar-desktop" style={{
       width:        "240px",
       flexShrink:   0,
       background:   "var(--bg-surface)",

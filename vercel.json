@@ -1,42 +1,7 @@
 {
   "version": 2,
-  "name": "portalrwa",
-  "alias": ["portalrwa"],
   "framework": "nextjs",
   "buildCommand": "next build",
   "outputDirectory": ".next",
-  "installCommand": "npm install",
-  "regions": ["iad1"],
-
-  "env": {
-    "NEXT_PUBLIC_PORTALDOT_WS":      "@portaldot_ws",
-    "NEXT_PUBLIC_ZKP_VERIFIER":      "@zkp_verifier_address",
-    "NEXT_PUBLIC_MARKETPLACE":       "@marketplace_address",
-    "NEXT_PUBLIC_PINATA_API_KEY":    "@pinata_api_key",
-    "NEXT_PUBLIC_PINATA_SECRET":     "@pinata_secret"
-  },
-
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "X-Frame-Options",        "value": "DENY"            },
-        { "key": "X-Content-Type-Options",  "value": "nosniff"         },
-        { "key": "Referrer-Policy",         "value": "strict-origin"   },
-        { "key": "X-XSS-Protection",       "value": "1; mode=block"   }
-      ]
-    },
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        { "key": "Access-Control-Allow-Origin",  "value": "*"                             },
-        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, PUT, DELETE, OPTIONS"},
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization"   }
-      ]
-    }
-  ],
-
-  "rewrites": [
-    { "source": "/health", "destination": "/api/health" }
-  ]
+  "installCommand": "npm install"
 }

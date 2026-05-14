@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Head from "next/head";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
@@ -22,13 +22,24 @@ const MOCK_ASSETS = [
 
 export default function Bridge() {
   const { isConnected, connect } = useWallet();
+  const [userAssets,  setUserAssets]  = useState([]);
+  const [selectedAsset, setSelectedAsset] = useState(MOCK_ASSETS[0]);
   const [fromChain,   setFromChain]   = useState("portaldot");
   const [toChain,     setToChain]     = useState("polkadot");
-  const [selectedAsset, setSelectedAsset] = useState(MOCK_ASSETS[0]);
+
   const [amount,      setAmount]      = useState("");
   const [bridging,    setBridging]    = useState(false);
   const [txStep,      setTxStep]      = useState(0); // 0=idle 1=approving 2=locking 3=minting 4=done
   const [showTx,      setShowTx]      = useState(false);
+
+  // Load user assets from localStorage
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("assetdot-assets") || "[]");
+      const mapped = saved.map(a => ({ id: a.id, name: a.name, symbol: a.symbol || a.name.slice(0,4).toUpperCase(), balance: a.fractionsAvailable || a.fractions }));
+      setUserAssets(mapped);
+    } catch(e) { setUserAssets([]); }
+  }, []);
 
   const swapChains = () => {
     setFromChain(toChain);
@@ -55,13 +66,15 @@ export default function Bridge() {
     "Bridge complete!",
   ];
 
+  const MOCK_ASSETS_STATIC = MOCK_ASSETS;
+  const ALL_BRIDGE_ASSETS = [...userAssets, ...MOCK_ASSETS_STATIC];
   const fromChainInfo = CHAINS.find((c) => c.id === fromChain);
   const toChainInfo   = CHAINS.find((c) => c.id === toChain);
 
   if (!isConnected) {
     return (
       <>
-        <Head><title>Bridge — PortalRWA</title></Head>
+        <Head><title>Bridge — AssetDot</title></Head>
         <Navbar />
         <div style={{ minHeight: "80vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px", textAlign: "center", padding: "40px" }}>
           <AlertCircle size={48} color="var(--text-muted)" />
@@ -75,7 +88,7 @@ export default function Bridge() {
 
   return (
     <>
-      <Head><title>Bridge — PortalRWA</title></Head>
+      <Head><title>Bridge — AssetDot</title></Head>
       <Navbar />
 
       <div style={{ display: "flex", minHeight: "calc(100vh - 64px)" }}>
@@ -175,7 +188,7 @@ export default function Bridge() {
               <div style={{ marginBottom: "16px" }}>
                 <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Select Asset</label>
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {MOCK_ASSETS.map((asset) => (
+                  {ALL_BRIDGE_ASSETS.map((asset) => (
                     <div
                       key={asset.id}
                       onClick={() => setSelectedAsset(asset)}
@@ -300,8 +313,8 @@ export default function Bridge() {
           })}
 
           {txStep === 4 && (
-            <Button variant="primary" fullWidth style={{ marginTop: "16px" }} onClick={() => { setShowTx(false); setTxStep(0); window.location.href = "/dashboard"; }}>
-              View in Dashboard
+            <Button variant="primary" fullWidth style={{ marginTop: "16px" }} onClick={() => { setShowTx(false); setTxStep(0); setAmount(""); }}>
+              Bridge Another Asset
             </Button>
           )}
         </div>

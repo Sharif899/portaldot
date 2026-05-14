@@ -70,7 +70,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>PortalRWA — Real-World Asset Tokenization on Portaldot</title>
+        <title>AssetDot — Real-World Asset Tokenization on Portaldot</title>
         <meta name="description" content="Tokenize, trade, and bridge real-world assets on the Portaldot Layer 0 blockchain." />
       </Head>
 
@@ -92,10 +92,49 @@ export default function Home() {
             width:      "800px",
             height:     "500px",
             background: isDark
-              ? "radial-gradient(ellipse, rgba(97,82,248,0.25) 0%, transparent 70%)"
-              : "radial-gradient(ellipse, rgba(97,82,248,0.12) 0%, transparent 70%)",
+              ? "radial-gradient(ellipse, rgba(97,82,248,0.2) 0%, transparent 70%)"
+              : "radial-gradient(ellipse, rgba(97,82,248,0.08) 0%, transparent 70%)",
             pointerEvents: "none",
           }} />
+
+          {/* Real-world asset background images */}
+          <div style={{
+            position:   "absolute",
+            inset:      0,
+            overflow:   "hidden",
+            pointerEvents: "none",
+          }}>
+            {/* Left image — building */}
+            <div style={{
+              position:   "absolute",
+              left:       "-2%",
+              top:        "5%",
+              width:      "28%",
+              height:     "90%",
+              backgroundImage: "url('https://images.unsplash.com/photo-1486325212027-8081e485255e?w=600&q=80')",
+              backgroundSize:  "cover",
+              backgroundPosition: "center",
+              borderRadius: "0 16px 16px 0",
+              opacity:    isDark ? 0.18 : 0.12,
+              maskImage:  "linear-gradient(to right, transparent 0%, black 30%, black 70%, transparent 100%)",
+              WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 30%, black 70%, transparent 100%)",
+            }} />
+            {/* Right image — farmland */}
+            <div style={{
+              position:   "absolute",
+              right:      "-2%",
+              top:        "5%",
+              width:      "28%",
+              height:     "90%",
+              backgroundImage: "url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80')",
+              backgroundSize:  "cover",
+              backgroundPosition: "center",
+              borderRadius: "16px 0 0 16px",
+              opacity:    isDark ? 0.18 : 0.12,
+              maskImage:  "linear-gradient(to left, transparent 0%, black 30%, black 70%, transparent 100%)",
+              WebkitMaskImage: "linear-gradient(to left, transparent 0%, black 30%, black 70%, transparent 100%)",
+            }} />
+          </div>
 
           {/* Grid background */}
           <div style={{
@@ -111,24 +150,7 @@ export default function Home() {
           }} />
 
           <div className="page-container" style={{ position: "relative", textAlign: "center" }}>
-            {/* Badge */}
-            <div style={{
-              display:        "inline-flex",
-              alignItems:     "center",
-              gap:            "8px",
-              padding:        "6px 14px",
-              borderRadius:   "20px",
-              border:         "1px solid var(--brand)",
-              background:     "var(--brand-dim)",
-              fontSize:       "12px",
-              fontWeight:     600,
-              color:          "var(--brand)",
-              marginBottom:   "24px",
-              letterSpacing:  "0.04em",
-            }}>
-              <Zap size={12} />
-              PORTALDOT HACKATHON 2026
-            </div>
+
 
             {/* Headline */}
             <h1 style={{
@@ -161,8 +183,8 @@ export default function Home() {
               lineHeight:  1.6,
               fontFamily:  "DM Sans, sans-serif",
             }}>
-              Tokenize property, commodities, and invoices on Portaldot L0.
-              Trade fractions, bridge cross-chain, and verify ownership with ZKP privacy.
+              From Lagos real estate to Accra farmland —<br />
+              tokenize, trade, and bridge any asset on Portaldot.
             </p>
 
             {/* CTAs */}
@@ -231,90 +253,137 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── Features grid ── */}
+        {/* ── Features bento ── */}
         <section style={{ padding: "80px 0", background: "var(--bg-surface)" }}>
           <div className="page-container">
-            <div style={{ textAlign: "center", marginBottom: "48px" }}>
+            <div style={{ marginBottom: "28px" }}>
               <p style={{
-                fontSize:      "11px",
-                fontWeight:    600,
-                color:         "var(--brand)",
-                textTransform: "uppercase",
-                letterSpacing: "0.1em",
-                marginBottom:  "10px",
+                fontSize: "11px", fontWeight: 600, color: "var(--brand)",
+                textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "10px",
               }}>
                 Everything in one place
               </p>
               <h2 style={{
-                fontFamily:    "Syne, sans-serif",
-                fontSize:      "clamp(28px, 4vw, 40px)",
-                fontWeight:    700,
-                color:         "var(--text-primary)",
-                margin:        0,
-                letterSpacing: "-0.02em",
+                fontFamily: "Syne, sans-serif", fontSize: "clamp(28px, 4vw, 40px)",
+                fontWeight: 700, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.02em",
+                maxWidth: "500px",
               }}>
-                The complete RWA stack
+                One platform.<br />Every asset. Every chain.
               </h2>
             </div>
 
-            <div style={{
-              display:             "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap:                 "20px",
-            }}>
-              {FEATURES.map(({ icon: Icon, color, bg, title, desc }) => (
-                <div
-                  key={title}
-                  style={{
-                    padding:      "24px",
-                    borderRadius: "16px",
-                    border:       "1px solid var(--border)",
-                    background:   "var(--bg-base)",
-                    transition:   "all 0.2s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = color;
-                    e.currentTarget.style.transform   = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow   = `0 8px 32px ${color}22`;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "var(--border)";
-                    e.currentTarget.style.transform   = "translateY(0)";
-                    e.currentTarget.style.boxShadow   = "none";
-                  }}
-                >
-                  <div style={{
-                    width:        "44px",
-                    height:       "44px",
-                    borderRadius: "12px",
-                    background:   bg,
-                    display:      "flex",
-                    alignItems:   "center",
-                    justifyContent: "center",
-                    marginBottom: "16px",
-                  }}>
-                    <Icon size={20} color={color} />
+            {/* Bento grid — asymmetric layout */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gridTemplateRows: "auto auto", gap: "16px" }}>
+
+              {/* Big card — Tokenize — spans 2 cols */}
+              <div style={{
+                gridColumn: "1 / 3",
+                borderRadius: "20px",
+                border: "1px solid var(--border)",
+                background: "var(--bg-base)",
+                overflow: "hidden",
+                position: "relative",
+                minHeight: "280px",
+                transition: "border-color 0.2s ease",
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.borderColor = "var(--brand)"}
+              onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
+              >
+                {/* Background image */}
+                <div style={{
+                  position: "absolute", inset: 0,
+                  backgroundImage: "url('https://images.unsplash.com/photo-1486325212027-8081e485255e?w=800&q=70')",
+                  backgroundSize: "cover", backgroundPosition: "center",
+                  opacity: isDark ? 0.15 : 0.1,
+                }} />
+                <div style={{ position: "relative", padding: "28px" }}>
+                  <div style={{ width: "48px", height: "48px", borderRadius: "14px", background: "var(--brand-dim)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "16px" }}>
+                    <Building2 size={22} color="var(--brand)" />
                   </div>
-                  <h3 style={{
-                    fontFamily:    "Syne, sans-serif",
-                    fontSize:      "16px",
-                    fontWeight:    700,
-                    color:         "var(--text-primary)",
-                    margin:        "0 0 8px",
-                    letterSpacing: "-0.01em",
-                  }}>
-                    {title}
+                  <h3 style={{ fontFamily: "Syne, sans-serif", fontSize: "22px", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 10px" }}>
+                    Tokenize Real Assets
                   </h3>
-                  <p style={{
-                    fontSize:   "13px",
-                    color:      "var(--text-secondary)",
-                    lineHeight: 1.7,
-                    margin:     0,
-                  }}>
-                    {desc}
+                  <p style={{ fontSize: "14px", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 20px", maxWidth: "420px" }}>
+                    Turn property, farmland, commodities, and invoices into on-chain tokens in minutes. Upload your legal document to IPFS, generate a ZKP proof, and mint your token on Portaldot.
                   </p>
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    {["Property", "Commodities", "Invoices"].map(t => (
+                      <span key={t} style={{ fontSize: "11px", fontWeight: 600, padding: "4px 12px", borderRadius: "20px", background: "var(--brand-dim)", color: "var(--brand)", border: "1px solid var(--brand)" }}>
+                        {t}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              ))}
+              </div>
+
+              {/* ZKP card — tall right */}
+              <div style={{
+                gridColumn: "3 / 4", gridRow: "1 / 3",
+                borderRadius: "20px", border: "1px solid var(--border)",
+                background: "var(--bg-base)", padding: "28px",
+                position: "relative", overflow: "hidden",
+                transition: "border-color 0.2s ease",
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.borderColor = "#a855f7"}
+              onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
+              >
+                <div style={{
+                  position: "absolute", bottom: 0, right: 0, width: "160px", height: "160px",
+                  background: "radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%)",
+                  pointerEvents: "none",
+                }} />
+                <div style={{ width: "48px", height: "48px", borderRadius: "14px", background: "rgba(168,85,247,0.12)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "16px" }}>
+                  <ShieldCheck size={22} color="#a855f7" />
+                </div>
+                <h3 style={{ fontFamily: "Syne, sans-serif", fontSize: "20px", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 10px" }}>
+                  ZKP Privacy
+                </h3>
+                <p style={{ fontSize: "13px", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 20px" }}>
+                  Prove your asset is real without exposing sensitive documents. A cryptographic hash stored on-chain lets investors verify ownership privately.
+                </p>
+                <div style={{ padding: "12px", borderRadius: "10px", background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.2)", fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.6 }}>
+                  🔒 SHA-256 hash stored on-chain<br />
+                  👁️ Document never exposed<br />
+                  ✅ Verifiable by anyone
+                </div>
+              </div>
+
+              {/* Marketplace card */}
+              <div style={{
+                borderRadius: "20px", border: "1px solid var(--border)",
+                background: "var(--bg-base)", padding: "24px", overflow: "hidden", position: "relative",
+                transition: "border-color 0.2s ease",
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.borderColor = "var(--accent-amber)"}
+              onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
+              >
+                <div style={{ width: "44px", height: "44px", borderRadius: "12px", background: "rgba(245,166,35,0.12)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "14px" }}>
+                  <Package size={20} color="var(--accent-amber)" />
+                </div>
+                <h3 style={{ fontFamily: "Syne, sans-serif", fontSize: "17px", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 8px" }}>Fractional Trading</h3>
+                <p style={{ fontSize: "13px", color: "var(--text-secondary)", lineHeight: 1.7, margin: 0 }}>
+                  Buy and sell fractions of real assets via the iSwap DEX. Invest in Lagos real estate from anywhere in the world.
+                </p>
+              </div>
+
+              {/* Bridge card */}
+              <div style={{
+                borderRadius: "20px", border: "1px solid var(--border)",
+                background: "var(--bg-base)", padding: "24px",
+                transition: "border-color 0.2s ease",
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.borderColor = "var(--accent-green)"}
+              onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
+              >
+                <div style={{ width: "44px", height: "44px", borderRadius: "12px", background: "rgba(0,229,160,0.12)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "14px" }}>
+                  <GitMerge size={20} color="var(--accent-green)" />
+                </div>
+                <h3 style={{ fontFamily: "Syne, sans-serif", fontSize: "17px", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 8px" }}>Cross-Chain Bridge</h3>
+                <p style={{ fontSize: "13px", color: "var(--text-secondary)", lineHeight: 1.7, margin: 0 }}>
+                  Move your RWA tokens across chains via Portaldot iBridge. Your assets stay liquid on every network.
+                </p>
+              </div>
+
             </div>
           </div>
         </section>

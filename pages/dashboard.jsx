@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
@@ -67,14 +67,37 @@ const MOCK_ACTIVITY = [
 export default function Dashboard() {
   const { isConnected, connect, selectedAccount, shortAddress } = useWallet();
   const [filter, setFilter] = useState("all");
+  const [userAssets, setUserAssets] = useState([]);
 
-  const totalValue    = MOCK_ASSETS.reduce((sum, a) => sum + a.valueUsd, 0);
-  const verifiedCount = MOCK_ASSETS.filter((a) => a.isVerified).length;
-  const activeCount   = MOCK_ASSETS.filter((a) => a.status === "Active").length;
+  const [recentActivity, setRecentActivity] = useState(MOCK_ACTIVITY);
+
+  // Load user assets from localStorage + merge with mock data
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("assetdot-assets") || "[]");
+      setUserAssets(saved);
+
+      // Build activity from user assets
+      const userActivity = saved.map((a) => ({
+        type:   "mint",
+        asset:  a.name,
+        time:   new Date(a.createdAt).toLocaleString(),
+        amount: `+${Number(a.fractions).toLocaleString()} fractions`,
+        color:  "var(--accent-green)",
+      }));
+      setRecentActivity([...userActivity, ...MOCK_ACTIVITY]);
+    } catch(e) { setUserAssets([]); }
+  }, []);
+
+  const ALL_ASSETS = [...userAssets, ...MOCK_ASSETS];
+  const totalValue    = ALL_ASSETS.reduce((sum, a) => sum + (Number(a.valueUsd) || 0), 0);
+  const verifiedCount = ALL_ASSETS.filter((a) => a.isVerified).length;
+  const activeCount   = ALL_ASSETS.filter((a) => a.status === "Active").length;
+  const totalAssets   = ALL_ASSETS.length;
 
   const filtered = filter === "all"
-    ? MOCK_ASSETS
-    : MOCK_ASSETS.filter((a) =>
+    ? ALL_ASSETS
+    : ALL_ASSETS.filter((a) =>
         filter === "property"  ? a.assetType === 0 :
         filter === "commodity" ? a.assetType === 1 :
         filter === "invoice"   ? a.assetType === 2 : true
@@ -83,7 +106,7 @@ export default function Dashboard() {
   if (!isConnected) {
     return (
       <>
-        <Head><title>Dashboard — PortalRWA</title></Head>
+        <Head><title>Dashboard — AssetDot</title></Head>
         <Navbar />
         <div style={{ minHeight: "80vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px", textAlign: "center", padding: "40px" }}>
           <AlertCircle size={48} color="var(--text-muted)" />
@@ -97,13 +120,13 @@ export default function Dashboard() {
 
   return (
     <>
-      <Head><title>Dashboard — PortalRWA</title></Head>
+      <Head><title>Dashboard — AssetDot</title></Head>
       <Navbar />
 
       <div style={{ display: "flex", minHeight: "calc(100vh - 64px)" }}>
         <Sidebar />
 
-        <main style={{ flex: 1, padding: "32px", overflowY: "auto", background: "var(--bg-base)" }}>
+        <main style={{ flex: 1, padding: "clamp(12px, 3vw, 32px)", overflowY: "auto", background: "var(--bg-base)", minWidth: 0 }}>
 
           {/* Header */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "28px", flexWrap: "wrap", gap: "12px" }}>
@@ -124,8 +147,8 @@ export default function Dashboard() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "16px", marginBottom: "28px" }}>
             {[
               { label: "Total Portfolio Value", value: `$${(totalValue / 1000).toFixed(0)}K`, icon: TrendingUp,  color: "var(--brand)"        },
-              { label: "Tokenized Assets",      value: MOCK_ASSETS.length,                    icon: Layers,      color: "var(--accent-cyan)"  },
-              { label: "ZKP Verified",          value: `${verifiedCount}/${MOCK_ASSETS.length}`, icon: ShieldCheck, color: "var(--accent-green)" },
+              { label: "Tokenized Assets",      value: totalAssets,                    icon: Layers,      color: "var(--accent-cyan)"  },
+              { label: "ZKP Verified",          value: `${verifiedCount}/${totalAssets}`, icon: ShieldCheck, color: "var(--accent-green)" },
               { label: "Active Assets",         value: activeCount,                            icon: ArrowUpRight, color: "var(--accent-amber)" },
             ].map(({ label, value, icon: Icon, color }) => (
               <div key={label} style={{
@@ -193,7 +216,7 @@ export default function Dashboard() {
                 Recent Activity
               </h3>
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                {MOCK_ACTIVITY.map((item, i) => (
+                {recentActivity.map((item, i) => (
                   <div key={i} style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
                     <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: item.color, marginTop: "5px", flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
