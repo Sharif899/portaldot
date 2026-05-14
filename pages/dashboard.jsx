@@ -126,7 +126,7 @@ export default function Dashboard() {
       <div style={{ display: "flex", minHeight: "calc(100vh - 64px)" }}>
         <Sidebar />
 
-        <main style={{ flex: 1, padding: "32px", overflowY: "auto", background: "var(--bg-base)" }}>
+        <main style={{ flex: 1, padding: "clamp(12px, 3vw, 32px)", overflowY: "auto", background: "var(--bg-base)", minWidth: 0 }}>
 
           {/* Header */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "28px", flexWrap: "wrap", gap: "12px" }}>
