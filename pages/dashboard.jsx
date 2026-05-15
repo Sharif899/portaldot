@@ -12,73 +12,6 @@ import {
   Plus, AlertCircle, ArrowUpRight,
 } from "lucide-react";
 
-const MOCK_ASSETS = [
-  {
-    id:                 "mock-1",
-    name:               "Lagos Apartment Block A",
-    assetType:          0,
-    valueUsd:           250000,
-    fractions:          1000000,
-    fractionsAvailable: 750000,
-    pricePerFraction:   0.35,
-    owner:              "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-    ipfsCid:            "QmXabc123def456",
-    isVerified:         true,
-    status:             "Active",
-    location:           "Lagos, Nigeria",
-  },
-  {
-    id:                 "mock-2",
-    name:               "Abuja Commercial Plaza Unit 5",
-    assetType:          0,
-    valueUsd:           180000,
-    fractions:          800000,
-    fractionsAvailable: 600000,
-    pricePerFraction:   0.28,
-    owner:              "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-    ipfsCid:            "QmAbc456def789",
-    isVerified:         true,
-    status:             "Active",
-    location:           "Abuja, Nigeria",
-  },
-  {
-    id:                 "mock-3",
-    name:               "Cocoa Export Batch #2026-04",
-    assetType:          1,
-    valueUsd:           85000,
-    fractions:          500000,
-    fractionsAvailable: 320000,
-    pricePerFraction:   0.22,
-    owner:              "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-    ipfsCid:            "QmYdef789ghi012",
-    isVerified:         true,
-    status:             "Active",
-    location:           "Accra, Ghana",
-  },
-  {
-    id:                 "mock-4",
-    name:               "Trade Invoice — Zenith Supplies",
-    assetType:          2,
-    valueUsd:           32000,
-    fractions:          100000,
-    fractionsAvailable: 100000,
-    pricePerFraction:   0.40,
-    owner:              "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-    ipfsCid:            "QmZjkl345mno678",
-    isVerified:         false,
-    status:             "Pending",
-    location:           "Abuja, Nigeria",
-  },
-];
-
-const MOCK_ACTIVITY = [
-  { type: "mint",     asset: "Lagos Apartment Block A",         time: "2 hours ago", amount: "+1,000,000 fractions", color: "var(--accent-green)" },
-  { type: "mint",     asset: "Abuja Commercial Plaza Unit 5",   time: "3 hours ago", amount: "+800,000 fractions",   color: "var(--accent-green)" },
-  { type: "trade",    asset: "Cocoa Export Batch #2026-04",     time: "5 hours ago", amount: "−180,000 fractions",   color: "var(--accent-amber)" },
-  { type: "verified", asset: "Lagos Apartment Block A",         time: "6 hours ago", amount: "ZKP Verified",         color: "var(--brand)"        },
-  { type: "mint",     asset: "Trade Invoice — Zenith Supplies", time: "1 day ago",   amount: "+100,000 fractions",   color: "var(--accent-green)" },
-];
-
 // Normalize Supabase snake_case → camelCase
 function normalize(a) {
   return {
@@ -94,30 +27,29 @@ function normalize(a) {
 
 export default function Dashboard() {
   const { isConnected, connect, selectedAccount, shortAddress } = useWallet();
-  const [filter, setFilter]                 = useState("all");
-  const [userAssets, setUserAssets]         = useState([]);
-  const [recentActivity, setRecentActivity] = useState(MOCK_ACTIVITY);
-  const [loading, setLoading]               = useState(false);
+  const [filter,         setFilter]        = useState("all");
+  const [userAssets,     setUserAssets]    = useState([]);
+  const [recentActivity, setRecentActivity]= useState([]);
+  const [loading,        setLoading]       = useState(false);
 
   useEffect(() => {
     async function load() {
       if (!selectedAccount?.address) return;
       setLoading(true);
       try {
-        const data = await fetchMyAssets(selectedAccount.address);
+        const data = await fetchMyAssets(selectedAccount.address); // ✅ queries by THIS wallet's address
         const normalized = (data || []).map(normalize);
         setUserAssets(normalized);
 
-        if (normalized.length > 0) {
-          const userActivity = normalized.map((a) => ({
-            type:   "mint",
-            asset:  a.name,
-            time:   new Date(a.created_at || a.createdAt || Date.now()).toLocaleString(),
-            amount: `+${Number(a.fractions).toLocaleString()} fractions`,
-            color:  "var(--accent-green)",
-          }));
-          setRecentActivity([...userActivity, ...MOCK_ACTIVITY]);
-        }
+        // Build activity feed from real assets only
+        const userActivity = normalized.map((a) => ({
+          type:   "mint",
+          asset:  a.name,
+          time:   new Date(a.created_at || a.createdAt || Date.now()).toLocaleString(),
+          amount: `+${Number(a.fractions).toLocaleString()} fractions`,
+          color:  "var(--accent-green)",
+        }));
+        setRecentActivity(userActivity);
       } catch (e) {
         console.error("Dashboard load error:", e);
         setUserAssets([]);
@@ -126,17 +58,17 @@ export default function Dashboard() {
       }
     }
     load();
-  }, [selectedAccount?.address]);
+  }, [selectedAccount?.address]); // ✅ re-runs whenever wallet switches
 
-  const ALL_ASSETS    = [...userAssets, ...MOCK_ASSETS];
-  const totalValue    = ALL_ASSETS.reduce((sum, a) => sum + (Number(a.valueUsd) || 0), 0);
-  const verifiedCount = ALL_ASSETS.filter((a) => a.isVerified).length;
-  const activeCount   = ALL_ASSETS.filter((a) => a.status === "Active").length;
-  const totalAssets   = ALL_ASSETS.length;
+  // ✅ FIX: use ONLY real assets — no mock data merged in
+  const totalValue    = userAssets.reduce((sum, a) => sum + (Number(a.valueUsd) || 0), 0);
+  const verifiedCount = userAssets.filter((a) => a.isVerified).length;
+  const activeCount   = userAssets.filter((a) => a.status === "Active").length;
+  const totalAssets   = userAssets.length;
 
   const filtered = filter === "all"
-    ? ALL_ASSETS
-    : ALL_ASSETS.filter((a) => {
+    ? userAssets
+    : userAssets.filter((a) => {
         const type = a.assetType ?? a.asset_type ?? 0;
         return filter === "property"  ? type === 0 :
                filter === "commodity" ? type === 1 :
@@ -216,17 +148,12 @@ export default function Dashboard() {
               <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
                 {["all", "property", "commodity", "invoice"].map((f) => (
                   <button key={f} onClick={() => setFilter(f)} style={{
-                    padding:       "6px 14px",
-                    borderRadius:  "20px",
-                    border:        `1px solid ${filter === f ? "var(--brand)" : "var(--border)"}`,
-                    background:    filter === f ? "var(--brand-dim)" : "transparent",
-                    color:         filter === f ? "var(--brand)" : "var(--text-secondary)",
-                    fontSize:      "12px",
-                    fontWeight:    filter === f ? 600 : 400,
-                    cursor:        "pointer",
-                    transition:    "all 0.15s ease",
-                    fontFamily:    "DM Sans, sans-serif",
-                    textTransform: "capitalize",
+                    padding: "6px 14px", borderRadius: "20px", cursor: "pointer",
+                    border: `1px solid ${filter === f ? "var(--brand)" : "var(--border)"}`,
+                    background: filter === f ? "var(--brand-dim)" : "transparent",
+                    color: filter === f ? "var(--brand)" : "var(--text-secondary)",
+                    fontSize: "12px", fontWeight: filter === f ? 600 : 400,
+                    transition: "all 0.15s ease", fontFamily: "DM Sans, sans-serif", textTransform: "capitalize",
                   }}>
                     {f === "all" ? "All Assets" : f}
                   </button>
@@ -237,6 +164,26 @@ export default function Dashboard() {
                 <p style={{ color: "var(--text-muted)", fontSize: "13px", marginBottom: "16px" }}>
                   Loading your assets...
                 </p>
+              )}
+
+              {/* ✅ Empty state — shown when wallet has no tokenized assets */}
+              {!loading && filtered.length === 0 && (
+                <div style={{
+                  textAlign: "center", padding: "60px 20px",
+                  background: "var(--bg-surface)", border: "1px solid var(--border)",
+                  borderRadius: "16px", color: "var(--text-muted)",
+                }}>
+                  <Layers size={40} style={{ marginBottom: "12px", opacity: 0.3 }} />
+                  <p style={{ fontSize: "15px", fontWeight: 600, color: "var(--text-secondary)", margin: "0 0 6px" }}>
+                    No assets yet
+                  </p>
+                  <p style={{ fontSize: "13px", margin: "0 0 20px" }}>
+                    Tokenize your first real-world asset to see it here
+                  </p>
+                  <Link href="/tokenize" style={{ textDecoration: "none" }}>
+                    <Button variant="primary" icon={Plus}>Tokenize New Asset</Button>
+                  </Link>
+                </div>
               )}
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" }}>
@@ -251,20 +198,26 @@ export default function Dashboard() {
               <h3 style={{ fontFamily: "Syne, sans-serif", fontSize: "15px", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 16px" }}>
                 Recent Activity
               </h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                {recentActivity.map((item, i) => (
-                  <div key={i} style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
-                    <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: item.color, marginTop: "5px", flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-primary)", margin: "0 0 2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {item.asset}
-                      </p>
-                      <p style={{ fontSize: "11px", color: item.color, margin: "0 0 1px" }}>{item.amount}</p>
-                      <p style={{ fontSize: "10px", color: "var(--text-muted)", margin: 0 }}>{item.time}</p>
+              {recentActivity.length === 0 ? (
+                <p style={{ fontSize: "12px", color: "var(--text-muted)", textAlign: "center", padding: "20px 0" }}>
+                  No activity yet
+                </p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {recentActivity.map((item, i) => (
+                    <div key={i} style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                      <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: item.color, marginTop: "5px", flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-primary)", margin: "0 0 2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {item.asset}
+                        </p>
+                        <p style={{ fontSize: "11px", color: item.color, margin: "0 0 1px" }}>{item.amount}</p>
+                        <p style={{ fontSize: "10px", color: "var(--text-muted)", margin: 0 }}>{item.time}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
