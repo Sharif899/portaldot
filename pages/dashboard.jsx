@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchMyAssets } from "@/utils/supabase";
+import { fetchMyAssets, fetchMyPurchases } from "@/utils/supabase";
 import Head from "next/head";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
@@ -37,19 +37,50 @@ export default function Dashboard() {
       if (!selectedAccount?.address) return;
       setLoading(true);
       try {
-        const data = await fetchMyAssets(selectedAccount.address); // ✅ queries by THIS wallet's address
-        const normalized = (data || []).map(normalize);
+        // Fetch assets I minted AND assets I bought fractions of — in parallel
+        const [owned, purchases] = await Promise.all([
+          fetchMyAssets(selectedAccount.address),
+          fetchMyPurchases(selectedAccount.address),
+        ]);
+
+        // purchases rows look like: { id, buyer, fractions_bought, assetdot: { ...asset } }
+        const purchased = purchases.map((p) => ({
+          ...p.assetdot,
+          _purchasedFractions: p.fractions_bought,
+          _isPurchased: true,
+        }));
+
+        // Merge — skip duplicates (e.g. if I minted AND bought fractions of the same asset)
+        const ownedIds     = new Set(owned.map((a) => a.id));
+        const newPurchased = purchased.filter((a) => !ownedIds.has(a.id));
+        const merged       = [...owned, ...newPurchased];
+
+        const normalized = merged.map(normalize);
         setUserAssets(normalized);
 
-        // Build activity feed from real assets only
-        const userActivity = normalized.map((a) => ({
+        // Build activity feed: mints (green) + purchases (cyan)
+        const mintActivity = owned.map((a) => ({
           type:   "mint",
           asset:  a.name,
-          time:   new Date(a.created_at || a.createdAt || Date.now()).toLocaleString(),
-          amount: `+${Number(a.fractions).toLocaleString()} fractions`,
+          time:   new Date(a.created_at || Date.now()).toLocaleString(),
+          amount: `+${Number(a.fractions).toLocaleString()} fractions minted`,
           color:  "var(--accent-green)",
         }));
-        setRecentActivity(userActivity);
+
+        const buyActivity = purchases.map((p) => ({
+          type:   "buy",
+          asset:  p.assetdot?.name || "Unknown Asset",
+          time:   new Date(p.created_at || Date.now()).toLocaleString(),
+          amount: `+${Number(p.fractions_bought).toLocaleString()} fractions bought`,
+          color:  "var(--accent-cyan)",
+        }));
+
+        // Sort newest first
+        const allActivity = [...mintActivity, ...buyActivity].sort(
+          (a, b) => new Date(b.time) - new Date(a.time)
+        );
+        setRecentActivity(allActivity);
+
       } catch (e) {
         console.error("Dashboard load error:", e);
         setUserAssets([]);
@@ -58,9 +89,8 @@ export default function Dashboard() {
       }
     }
     load();
-  }, [selectedAccount?.address]); // ✅ re-runs whenever wallet switches
+  }, [selectedAccount?.address]);
 
-  // ✅ FIX: use ONLY real assets — no mock data merged in
   const totalValue    = userAssets.reduce((sum, a) => sum + (Number(a.valueUsd) || 0), 0);
   const verifiedCount = userAssets.filter((a) => a.isVerified).length;
   const activeCount   = userAssets.filter((a) => a.status === "Active").length;
@@ -166,7 +196,7 @@ export default function Dashboard() {
                 </p>
               )}
 
-              {/* ✅ Empty state — shown when wallet has no tokenized assets */}
+              {/* Empty state */}
               {!loading && filtered.length === 0 && (
                 <div style={{
                   textAlign: "center", padding: "60px 20px",
@@ -178,7 +208,7 @@ export default function Dashboard() {
                     No assets yet
                   </p>
                   <p style={{ fontSize: "13px", margin: "0 0 20px" }}>
-                    Tokenize your first real-world asset to see it here
+                    Tokenize your first real-world asset or buy fractions on the marketplace
                   </p>
                   <Link href="/tokenize" style={{ textDecoration: "none" }}>
                     <Button variant="primary" icon={Plus}>Tokenize New Asset</Button>
