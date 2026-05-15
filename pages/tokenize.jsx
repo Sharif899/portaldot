@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Head from "next/head";
+import { saveAsset } from "@/utils/supabase";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
 import Button from "@/components/ui/Button";
@@ -26,7 +27,7 @@ const STEPS = [
 ];
 
 export default function Tokenize() {
-  const { isConnected, connect } = useWallet();
+  const { isConnected, connect, selectedAccount } = useWallet();
 
   // Form state
   const [step,         setStep]        = useState(1);
@@ -101,6 +102,7 @@ export default function Tokenize() {
       fractions:          Number(fractions),
       fractionsAvailable: Number(fractions),
       pricePerFraction:   0.35,
+      owner:              selectedAccount?.address || 'anonymous',
       ipfsCid:            ipfsCid,
       zkpHash:            zkpHash,
       isVerified:         false,
@@ -110,10 +112,16 @@ export default function Tokenize() {
       txHash:             mockTx,
     };
     try {
+      // Save to localStorage for immediate personal view
       const existing = JSON.parse(localStorage.getItem("assetdot-assets") || "[]");
       existing.unshift(newAsset);
       localStorage.setItem("assetdot-assets", JSON.stringify(existing));
     } catch(e) { console.error("localStorage error:", e); }
+
+    // Save to Supabase so ALL users can see it on marketplace
+    try {
+      await saveAsset(newAsset);
+    } catch(e) { console.error("Supabase save error:", e); }
 
     setTxHash(mockTx);
     setMinting(false);
