@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchAllAssets, supabase } from "@/utils/supabase";
+import { fetchAllAssets, supabase, buyFraction } from "@/utils/supabase";
 import Head from "next/head";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
@@ -26,8 +26,8 @@ function normalize(a) {
 }
 
 export default function Marketplace() {
-  const { isConnected, connect }         = useWallet();
-  const router                           = useRouter();
+  const { isConnected, connect, selectedAccount } = useWallet();
+  const router                                    = useRouter();
   const [search,        setSearch]       = useState("");
   const [allListings,   setAllListings]  = useState([]);
   const [typeFilter,    setTypeFilter]   = useState("all");
@@ -87,6 +87,7 @@ export default function Marketplace() {
     try {
       const newAvailable = selectedAsset.fractionsAvailable - quantity;
 
+      // 1. Decrement fractions_available on the asset
       const { error } = await supabase
         .from("assetdot")
         .update({ fractions_available: newAvailable })
@@ -94,7 +95,14 @@ export default function Marketplace() {
 
       if (error) throw error;
 
-      // Update local state immediately so UI reflects the change without a reload
+      // 2. Record the purchase so it shows on the buyer's dashboard
+      await buyFraction({
+        assetId:         selectedAsset.id,
+        buyer:           selectedAccount.address,
+        fractionsBought: quantity,
+      });
+
+      // 3. Update local UI immediately
       setAllListings((prev) =>
         prev.map((a) =>
           a.id === selectedAsset.id
@@ -282,7 +290,6 @@ export default function Marketplace() {
               </div>
             ))}
 
-            {/* Error message */}
             {buyError && (
               <p style={{ fontSize: "12px", color: "var(--accent-red, #ef4444)", marginTop: "10px", textAlign: "center" }}>
                 {buyError}
