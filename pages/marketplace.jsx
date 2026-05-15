@@ -7,16 +7,8 @@ import AssetCard from "@/components/ui/AssetCard";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import { useWallet } from "@/context/WalletContext";
+import { useRouter } from "next/router";
 import { Search, SlidersHorizontal, ShoppingCart, CheckCircle2 } from "lucide-react";
-
-const LISTINGS = [
-  { id:"m1", name:"Lagos Apartment Block A",        assetType:0, valueUsd:250000, fractions:1000000, fractionsAvailable:750000, pricePerFraction:0.35, owner:"5Grwva...utQY", ipfsCid:"QmXabc123", isVerified:true,  status:"Active", location:"Lagos, Nigeria"    },
-  { id:"m2", name:"Cocoa Export Batch #2026-04",    assetType:1, valueUsd:85000,  fractions:500000,  fractionsAvailable:320000, pricePerFraction:0.22, owner:"5FHneW...d1Hi", ipfsCid:"QmYdef456", isVerified:true,  status:"Active", location:"Accra, Ghana"      },
-  { id:"m3", name:"Abuja Commercial Plaza Unit 5",  assetType:0, valueUsd:180000, fractions:800000,  fractionsAvailable:600000, pricePerFraction:0.28, owner:"5DAAnr...hxCz", ipfsCid:"QmZghi789", isVerified:true,  status:"Active", location:"Abuja, Nigeria"    },
-  { id:"m4", name:"Palm Oil Futures Q1 2026",       assetType:1, valueUsd:45000,  fractions:200000,  fractionsAvailable:120000, pricePerFraction:0.18, owner:"5HGjYb...9eVX", ipfsCid:"QmAjkl012", isVerified:false, status:"Active", location:"Port Harcourt, NG" },
-  { id:"m5", name:"Logistics Invoice — DHL Africa", assetType:2, valueUsd:28000,  fractions:100000,  fractionsAvailable:80000,  pricePerFraction:0.38, owner:"5CiPPu...dCJu", ipfsCid:"QmBmno345", isVerified:true,  status:"Active", location:"Nairobi, Kenya"    },
-  { id:"m6", name:"Nairobi Office Complex Floor 3", assetType:0, valueUsd:320000, fractions:1500000, fractionsAvailable:50000,  pricePerFraction:0.29, owner:"5Grwva...utQY", ipfsCid:"QmCpqr678", isVerified:true,  status:"Active", location:"Nairobi, Kenya"    },
-];
 
 // Normalize Supabase snake_case → camelCase
 function normalize(a) {
@@ -34,9 +26,10 @@ function normalize(a) {
 }
 
 export default function Marketplace() {
-  const { isConnected, connect }        = useWallet();
+  const { isConnected, connect }         = useWallet();
+  const router                           = useRouter();
   const [search,        setSearch]       = useState("");
-  const [userListings,  setUserListings] = useState([]);
+  const [allListings,   setAllListings]  = useState([]); // ✅ only real Supabase data
   const [typeFilter,    setTypeFilter]   = useState("all");
   const [sortBy,        setSortBy]       = useState("value");
   const [selectedAsset, setSelectedAsset]= useState(null);
@@ -48,31 +41,31 @@ export default function Marketplace() {
   useEffect(() => {
     async function load() {
       try {
-        const data = await fetchAllAssets();
-        setUserListings((data || []).map(normalize));
+        const data = await fetchAllAssets(); // ✅ fetches ALL assets from ALL wallets
+        setAllListings((data || []).map(normalize));
       } catch (e) {
         console.error("Marketplace load error:", e);
-        setUserListings([]);
+        setAllListings([]);
       } finally {
         setLoading(false);
       }
     }
     load();
-  }, []);
+  }, []); // runs once on mount — no wallet dependency, marketplace is public
 
-  const ALL_LISTINGS = [...userListings, ...LISTINGS];
-
-  const filtered = ALL_LISTINGS
+  // ✅ FIX: use only real listings — no hardcoded LISTINGS merged in
+  const filtered = allListings
     .filter((a) => {
       const name     = (a.name     || "").toLowerCase();
       const location = (a.location || "").toLowerCase();
       const term     = search.toLowerCase();
-      const matchSearch = name.includes(term) || location.includes(term);
+      const matchSearch = !term || name.includes(term) || location.includes(term);
       const type        = a.assetType ?? a.asset_type ?? 0;
-      const matchType   = typeFilter === "all" ? true :
-                          typeFilter === "0"   ? type === 0 :
-                          typeFilter === "1"   ? type === 1 :
-                          typeFilter === "2"   ? type === 2 : true;
+      const matchType   =
+        typeFilter === "all" ? true :
+        typeFilter === "0"   ? type === 0 :
+        typeFilter === "1"   ? type === 1 :
+        typeFilter === "2"   ? type === 2 : true;
       return matchSearch && matchType;
     })
     .sort((a, b) =>
@@ -89,7 +82,9 @@ export default function Marketplace() {
     setShowSuccess(true);
   };
 
-  const totalCost = selectedAsset ? (quantity * (selectedAsset.pricePerFraction || 0)).toFixed(4) : 0;
+  const totalCost = selectedAsset
+    ? (quantity * (selectedAsset.pricePerFraction || 0)).toFixed(4)
+    : 0;
 
   return (
     <>
@@ -103,11 +98,16 @@ export default function Marketplace() {
 
           {/* Header */}
           <div style={{ marginBottom: "24px" }}>
-            <h1 style={{ fontFamily: "Syne, sans-serif", fontSize: "26px", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 4px", letterSpacing: "-0.02em" }}>
+            <h1 style={{
+              fontFamily: "Syne, sans-serif", fontSize: "26px", fontWeight: 700,
+              color: "var(--text-primary)", margin: "0 0 4px", letterSpacing: "-0.02em",
+            }}>
               Marketplace
             </h1>
             <p style={{ color: "var(--text-secondary)", fontSize: "13px", margin: 0 }}>
-              {loading ? "Loading listings..." : `${ALL_LISTINGS.length} assets listed · Buy fractions of real-world assets`}
+              {loading
+                ? "Loading listings..."
+                : `${allListings.length} asset${allListings.length !== 1 ? "s" : ""} listed · Buy fractions of real-world assets`}
             </p>
           </div>
 
@@ -125,30 +125,70 @@ export default function Marketplace() {
               />
             </div>
 
-            <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="input" style={{ width: "auto", paddingRight: "32px", cursor: "pointer" }}>
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="input"
+              style={{ width: "auto", paddingRight: "32px", cursor: "pointer" }}
+            >
               <option value="all">All Types</option>
               <option value="0">Property</option>
               <option value="1">Commodity</option>
               <option value="2">Invoice</option>
             </select>
 
-            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="input" style={{ width: "auto", paddingRight: "32px", cursor: "pointer" }}>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="input"
+              style={{ width: "auto", paddingRight: "32px", cursor: "pointer" }}
+            >
               <option value="value">Sort: Highest Value</option>
               <option value="price">Sort: Lowest Price</option>
               <option value="available">Sort: Most Available</option>
             </select>
           </div>
 
-          <p style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "16px" }}>
-            Showing {filtered.length} of {ALL_LISTINGS.length} listings
-          </p>
+          {!loading && (
+            <p style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "16px" }}>
+              Showing {filtered.length} of {allListings.length} listings
+            </p>
+          )}
 
-          {filtered.length === 0 ? (
+          {/* Loading state */}
+          {loading && (
             <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--text-muted)" }}>
-              <SlidersHorizontal size={32} style={{ marginBottom: "10px" }} />
-              <p>{loading ? "Loading..." : "No assets match your filters"}</p>
+              <p style={{ fontSize: "14px" }}>Loading marketplace...</p>
             </div>
-          ) : (
+          )}
+
+          {/* Empty state */}
+          {!loading && allListings.length === 0 && (
+            <div style={{
+              textAlign: "center", padding: "60px 20px",
+              background: "var(--bg-surface)", border: "1px solid var(--border)",
+              borderRadius: "16px", color: "var(--text-muted)",
+            }}>
+              <SlidersHorizontal size={32} style={{ marginBottom: "10px", opacity: 0.4 }} />
+              <p style={{ fontSize: "15px", fontWeight: 600, color: "var(--text-secondary)", margin: "0 0 6px" }}>
+                No listings yet
+              </p>
+              <p style={{ fontSize: "13px", margin: 0 }}>
+                Be the first to tokenize a real-world asset
+              </p>
+            </div>
+          )}
+
+          {/* No filter match */}
+          {!loading && allListings.length > 0 && filtered.length === 0 && (
+            <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--text-muted)" }}>
+              <SlidersHorizontal size={32} style={{ marginBottom: "10px", opacity: 0.4 }} />
+              <p>No assets match your filters</p>
+            </div>
+          )}
+
+          {/* Listings grid */}
+          {!loading && filtered.length > 0 && (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "16px" }}>
               {filtered.map((asset) => (
                 <AssetCard
@@ -164,6 +204,7 @@ export default function Marketplace() {
               ))}
             </div>
           )}
+
         </main>
       </div>
 
@@ -194,10 +235,10 @@ export default function Marketplace() {
             </div>
 
             {[
-              { label: "Price per fraction", value: `${selectedAsset.pricePerFraction} POT` },
-              { label: "Quantity",           value: quantity.toLocaleString()               },
-              { label: "Platform fee (1%)",  value: `${(totalCost * 0.01).toFixed(4)} POT` },
-              { label: "Total cost",         value: `${totalCost} POT`, bold: true          },
+              { label: "Price per fraction", value: `${selectedAsset.pricePerFraction} POT`  },
+              { label: "Quantity",           value: quantity.toLocaleString()                 },
+              { label: "Platform fee (1%)",  value: `${(totalCost * 0.01).toFixed(4)} POT`   },
+              { label: "Total cost",         value: `${totalCost} POT`, bold: true            },
             ].map(({ label, value, bold }) => (
               <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
                 <span style={{ fontSize: "13px", color: "var(--text-secondary)" }}>{label}</span>
@@ -205,20 +246,26 @@ export default function Marketplace() {
               </div>
             ))}
 
-            <Button variant="primary" fullWidth loading={buying} icon={ShoppingCart} style={{ marginTop: "16px" }} onClick={handleBuy}>
+            <Button
+              variant="primary" fullWidth loading={buying}
+              icon={ShoppingCart} style={{ marginTop: "16px" }}
+              onClick={handleBuy}
+            >
               {buying ? "Processing..." : `Buy ${quantity.toLocaleString()} Fractions`}
             </Button>
           </div>
         )}
       </Modal>
 
+      {/* Success modal */}
       <Modal isOpen={showSuccess} onClose={() => setShowSuccess(false)} title="Purchase Complete" size="sm">
         <div style={{ textAlign: "center" }}>
           <CheckCircle2 size={48} color="var(--accent-green)" style={{ marginBottom: "12px" }} />
           <p style={{ fontSize: "14px", color: "var(--text-secondary)", margin: "0 0 16px" }}>
             Your fractions have been transferred to your wallet successfully.
           </p>
-          <Button variant="primary" fullWidth onClick={() => { setShowSuccess(false); window.location.href="/dashboard"; }}>
+          {/* ✅ FIX: router.push instead of window.location.href */}
+          <Button variant="primary" fullWidth onClick={() => { setShowSuccess(false); router.push("/dashboard"); }}>
             View in Dashboard
           </Button>
         </div>
