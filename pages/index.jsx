@@ -79,11 +79,61 @@ export default function Home() {
       <main>
         {/* ── Hero ── */}
         <section style={{
-          position:   "relative",
-          padding:    "80px 0 100px",
-          overflow:   "hidden",
+          position: "relative",
+          padding:  "80px 0 100px",
+          overflow: "hidden",
         }}>
-          {/* Background glow */}
+
+          {/* ── BACKGROUND: full bleed asset collage ── */}
+          <div style={{
+            position: "absolute",
+            inset:    0,
+            display:  "grid",
+            gridTemplateColumns: "1fr 1fr 1fr 1fr",
+            gap:      0,
+            pointerEvents: "none",
+          }}>
+            {[
+              { url: "https://images.unsplash.com/photo-1486325212027-8081e485255e?w=600&q=80", label: "building" },
+              { url: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80", label: "farmland" },
+              { url: "https://images.unsplash.com/photo-1565793298595-6a879b1d9492?w=600&q=80", label: "warehouse" },
+              { url: "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=600&q=80", label: "city" },
+            ].map(({ url, label }) => (
+              <div key={label} style={{
+                backgroundImage:    `url('${url}')`,
+                backgroundSize:     "cover",
+                backgroundPosition: "center",
+                opacity:            isDark ? 0.22 : 0.14,
+              }} />
+            ))}
+          </div>
+
+          {/* Dark overlay so text stays readable */}
+          <div style={{
+            position:   "absolute",
+            inset:      0,
+            background: isDark
+              ? "linear-gradient(to bottom, rgba(10,10,20,0.55) 0%, rgba(10,10,20,0.82) 60%, rgba(10,10,20,1) 100%)"
+              : "linear-gradient(to bottom, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.82) 60%, rgba(255,255,255,1) 100%)",
+            pointerEvents: "none",
+          }} />
+
+          {/* Vertical divider lines between images */}
+          <div style={{
+            position:      "absolute",
+            inset:         0,
+            pointerEvents: "none",
+            display:       "grid",
+            gridTemplateColumns: "1fr 1fr 1fr 1fr",
+          }}>
+            {[0,1,2,3].map(i => (
+              <div key={i} style={{
+                borderRight: i < 3 ? "1px solid rgba(97,82,248,0.15)" : "none",
+              }} />
+            ))}
+          </div>
+
+          {/* Brand glow on top */}
           <div style={{
             position:   "absolute",
             top:        "-20%",
@@ -92,65 +142,25 @@ export default function Home() {
             width:      "800px",
             height:     "500px",
             background: isDark
-              ? "radial-gradient(ellipse, rgba(97,82,248,0.2) 0%, transparent 70%)"
-              : "radial-gradient(ellipse, rgba(97,82,248,0.08) 0%, transparent 70%)",
+              ? "radial-gradient(ellipse, rgba(97,82,248,0.25) 0%, transparent 70%)"
+              : "radial-gradient(ellipse, rgba(97,82,248,0.10) 0%, transparent 70%)",
             pointerEvents: "none",
           }} />
 
-          {/* Real-world asset background images */}
+          {/* Grid overlay */}
           <div style={{
-            position:   "absolute",
-            inset:      0,
-            overflow:   "hidden",
-            pointerEvents: "none",
-          }}>
-            {/* Left image — building */}
-            <div style={{
-              position:   "absolute",
-              left:       "-2%",
-              top:        "5%",
-              width:      "28%",
-              height:     "90%",
-              backgroundImage: "url('https://images.unsplash.com/photo-1486325212027-8081e485255e?w=600&q=80')",
-              backgroundSize:  "cover",
-              backgroundPosition: "center",
-              borderRadius: "0 16px 16px 0",
-              opacity:    isDark ? 0.18 : 0.12,
-              maskImage:  "linear-gradient(to right, transparent 0%, black 30%, black 70%, transparent 100%)",
-              WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 30%, black 70%, transparent 100%)",
-            }} />
-            {/* Right image — farmland */}
-            <div style={{
-              position:   "absolute",
-              right:      "-2%",
-              top:        "5%",
-              width:      "28%",
-              height:     "90%",
-              backgroundImage: "url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80')",
-              backgroundSize:  "cover",
-              backgroundPosition: "center",
-              borderRadius: "16px 0 0 16px",
-              opacity:    isDark ? 0.18 : 0.12,
-              maskImage:  "linear-gradient(to left, transparent 0%, black 30%, black 70%, transparent 100%)",
-              WebkitMaskImage: "linear-gradient(to left, transparent 0%, black 30%, black 70%, transparent 100%)",
-            }} />
-          </div>
-
-          {/* Grid background */}
-          <div style={{
-            position:           "absolute",
-            inset:              0,
-            backgroundImage:    isDark
+            position:        "absolute",
+            inset:           0,
+            backgroundImage: isDark
               ? "linear-gradient(rgba(97,82,248,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(97,82,248,0.06) 1px, transparent 1px)"
               : "linear-gradient(rgba(97,82,248,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(97,82,248,0.08) 1px, transparent 1px)",
-            backgroundSize:     "40px 40px",
-            pointerEvents:      "none",
-            maskImage:          "radial-gradient(ellipse 80% 60% at 50% 0%, black 0%, transparent 100%)",
-            WebkitMaskImage:    "radial-gradient(ellipse 80% 60% at 50% 0%, black 0%, transparent 100%)",
+            backgroundSize:  "40px 40px",
+            pointerEvents:   "none",
+            maskImage:       "radial-gradient(ellipse 80% 60% at 50% 0%, black 0%, transparent 100%)",
+            WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 0%, black 0%, transparent 100%)",
           }} />
 
           <div className="page-container" style={{ position: "relative", textAlign: "center" }}>
-
 
             {/* Headline */}
             <h1 style={{
@@ -165,7 +175,7 @@ export default function Home() {
             }}>
               Real-World Assets,{" "}
               <span style={{
-                background: "linear-gradient(135deg, var(--brand) 0%, var(--accent-cyan) 100%)",
+                background:           "linear-gradient(135deg, var(--brand) 0%, var(--accent-cyan) 100%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor:  "transparent",
                 backgroundClip:       "text",
@@ -176,12 +186,12 @@ export default function Home() {
 
             {/* Subheadline */}
             <p style={{
-              fontSize:    "clamp(16px, 2.5vw, 20px)",
-              color:       "var(--text-secondary)",
-              maxWidth:    "560px",
-              margin:      "0 auto 40px",
-              lineHeight:  1.6,
-              fontFamily:  "DM Sans, sans-serif",
+              fontSize:   "clamp(16px, 2.5vw, 20px)",
+              color:      "var(--text-secondary)",
+              maxWidth:   "560px",
+              margin:     "0 auto 40px",
+              lineHeight: 1.6,
+              fontFamily: "DM Sans, sans-serif",
             }}>
               From Lagos real estate to Accra farmland —<br />
               tokenize, trade, and bridge any asset on Portaldot.
@@ -289,7 +299,6 @@ export default function Home() {
               onMouseEnter={(e) => e.currentTarget.style.borderColor = "var(--brand)"}
               onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
               >
-                {/* Background image */}
                 <div style={{
                   position: "absolute", inset: 0,
                   backgroundImage: "url('https://images.unsplash.com/photo-1486325212027-8081e485255e?w=800&q=70')",
