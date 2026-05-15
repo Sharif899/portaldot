@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { fetchAllAssets } from "@/utils/supabase";
 import Head from "next/head";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
@@ -19,12 +20,20 @@ export default function Privacy() {
   const [verifyHash,   setVerifyHash]   = useState("");
   const [myAssets,     setMyAssets]     = useState([]);
 
-  // Load user assets from localStorage
+  // Load ALL assets from Supabase — so anyone can verify any asset
   useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem("assetdot-assets") || "[]");
-      setMyAssets(saved);
-    } catch(e) { setMyAssets([]); }
+    async function load() {
+      try {
+        const data = await fetchAllAssets();
+        setMyAssets(data);
+      } catch(e) {
+        try {
+          const saved = JSON.parse(localStorage.getItem("assetdot-assets") || "[]");
+          setMyAssets(saved);
+        } catch(e2) { setMyAssets([]); }
+      }
+    }
+    load();
   }, []);
   const [verifying,    setVerifying]    = useState(false);
   const [verifyResult, setVerifyResult] = useState(null); // null | true | false
