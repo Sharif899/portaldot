@@ -7,50 +7,63 @@ import Button from "@/components/ui/Button";
 import { useWallet } from "@/context/WalletContext";
 import { ShieldCheck, ShieldX, Shield, CheckCircle2, XCircle, Info, AlertCircle } from "lucide-react";
 
-const MOCK_PROOFS = [
-  { assetId: "5GrwABC...1234", assetName: "Lagos Island Apartment Block A", status: "Verified", hash: "a3f8e9b2c1d4...7f2e", submittedAt: "2025-01-15", verifiedAt: "2025-01-16", verifier: "5FHneW...d1Hi" },
-  { assetId: "5GrwDEF...5678", assetName: "Cocoa Export Batch #2024-11",    status: "Verified", hash: "b7c2d5e8f1a3...9c4d", submittedAt: "2025-01-14", verifiedAt: "2025-01-14", verifier: "5FHneW...d1Hi" },
-  { assetId: "5GrwGHI...9012", assetName: "Trade Invoice — Zenith Supplies",status: "Pending",  hash: "c9d3e6f2a8b5...1d7e", submittedAt: "2025-01-17", verifiedAt: null,          verifier: null           },
-];
+// ✅ Normalize snake_case Supabase fields → camelCase
+function normalize(a) {
+  return {
+    ...a,
+    zkpHash: a.zkpHash || a.zkp_hash || "",       // ✅ FIX: was only reading a.zkpHash which is undefined
+    ipfsCid: a.ipfsCid || a.ipfs_cid || "",       // ✅ FIX: same issue for IPFS CID
+    isVerified: a.isVerified ?? a.is_verified ?? false,
+    assetType:  a.assetType  ?? a.asset_type  ?? 0,
+    valueUsd:   a.valueUsd   ?? a.value_usd   ?? 0,
+  };
+}
+
+const statusColors = {
+  Verified: { color: "var(--accent-green)", bg: "rgba(0,229,160,0.12)",   icon: ShieldCheck },
+  Pending:  { color: "var(--accent-amber)", bg: "rgba(245,166,35,0.12)",  icon: Shield      },
+  Revoked:  { color: "var(--accent-coral)", bg: "rgba(255,107,107,0.12)", icon: ShieldX     },
+};
 
 export default function Privacy() {
   const { isConnected, connect } = useWallet();
   const [tab,          setTab]          = useState("verify");
+  const [allAssets,    setAllAssets]    = useState([]); // ✅ normalized assets from Supabase
   const [verifyAsset,  setVerifyAsset]  = useState("");
   const [verifyHash,   setVerifyHash]   = useState("");
-  const [myAssets,     setMyAssets]     = useState([]);
-
-  // Load ALL assets from Supabase — so anyone can verify any asset
-  useEffect(() => {
-    async function load() {
-      try {
-        const data = await fetchAllAssets();
-        setMyAssets(data);
-      } catch(e) {
-        try {
-          const saved = JSON.parse(localStorage.getItem("assetdot-assets") || "[]");
-          setMyAssets(saved);
-        } catch(e2) { setMyAssets([]); }
-      }
-    }
-    load();
-  }, []);
   const [verifying,    setVerifying]    = useState(false);
-  const [verifyResult, setVerifyResult] = useState(null); // null | true | false
+  const [verifyResult, setVerifyResult] = useState(null);
   const [submitAsset,  setSubmitAsset]  = useState("");
   const [submitHash,   setSubmitHash]   = useState("");
   const [submitCid,    setSubmitCid]    = useState("");
   const [submitting,   setSubmitting]   = useState(false);
   const [submitted,    setSubmitted]    = useState(false);
 
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await fetchAllAssets();
+        setAllAssets((data || []).map(normalize)); // ✅ normalize so zkpHash & ipfsCid always work
+      } catch (e) {
+        console.error("ZKP load error:", e);
+        setAllAssets([]);
+      }
+    }
+    load();
+  }, []);
+
   const handleVerify = async () => {
     if (!verifyAsset || !verifyHash) return;
     setVerifying(true);
     setVerifyResult(null);
     await new Promise((r) => setTimeout(r, 1800));
-    // Simulate: match against mock proof
-    const found = MOCK_PROOFS.find(
-      (p) => p.status === "Verified" && verifyHash.length > 10
+
+    // ✅ FIX: verify against real Supabase assets — match by id/address AND zkpHash
+    const found = allAssets.find(
+      (a) =>
+        (a.id === verifyAsset || a.contractAddress === verifyAsset) &&
+        a.zkpHash &&
+        a.zkpHash === verifyHash
     );
     setVerifyResult(!!found);
     setVerifying(false);
@@ -64,11 +77,20 @@ export default function Privacy() {
     setSubmitted(true);
   };
 
-  const statusColors = {
-    Verified: { color: "var(--accent-green)", bg: "rgba(0,229,160,0.12)", icon: ShieldCheck },
-    Pending:  { color: "var(--accent-amber)", bg: "rgba(245,166,35,0.12)", icon: Shield      },
-    Revoked:  { color: "var(--accent-coral)", bg: "rgba(255,107,107,0.12)", icon: ShieldX   },
-  };
+  // ✅ Build proof registry from real Supabase data instead of MOCK_PROOFS
+  const proofRegistry = allAssets
+    .filter((a) => a.zkpHash) // only assets that have a ZKP hash
+    .map((a) => ({
+      assetName:   a.name,
+      status:      a.is_verified || a.isVerified ? "Verified" : "Pending",
+      hash:        a.zkpHash ? `${a.zkpHash.slice(0, 16)}...` : "—",
+      submittedAt: a.created_at
+        ? new Date(a.created_at).toLocaleDateString()
+        : "—",
+      verifiedAt: a.is_verified || a.isVerified ? a.created_at
+        ? new Date(a.created_at).toLocaleDateString()
+        : "—" : null,
+    }));
 
   if (!isConnected) {
     return (
@@ -115,29 +137,25 @@ export default function Privacy() {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "24px", alignItems: "start" }}>
+
             {/* Left: tabs */}
             <div>
-              {/* Tab switcher */}
-              <div style={{ display: "flex", gap: "0", marginBottom: "20px", background: "var(--bg-muted)", borderRadius: "12px", padding: "4px", width: "fit-content" }}>
+              <div style={{ display: "flex", marginBottom: "20px", background: "var(--bg-muted)", borderRadius: "12px", padding: "4px", width: "fit-content" }}>
                 {[
-                  { id: "verify", label: "Verify Proof"  },
-                  { id: "submit", label: "Submit Proof"  },
+                  { id: "verify", label: "Verify Proof" },
+                  { id: "submit", label: "Submit Proof" },
                 ].map(({ id, label }) => (
                   <button
                     key={id}
                     onClick={() => setTab(id)}
                     style={{
-                      padding:      "8px 20px",
-                      borderRadius: "9px",
-                      border:       "none",
-                      background:   tab === id ? "var(--bg-surface)" : "transparent",
-                      color:        tab === id ? "var(--text-primary)" : "var(--text-muted)",
-                      fontWeight:   tab === id ? 600 : 400,
-                      fontSize:     "13px",
-                      cursor:       "pointer",
-                      transition:   "all 0.15s ease",
-                      fontFamily:   "DM Sans, sans-serif",
-                      boxShadow:    tab === id ? "var(--shadow-sm)" : "none",
+                      padding: "8px 20px", borderRadius: "9px", border: "none",
+                      background: tab === id ? "var(--bg-surface)" : "transparent",
+                      color:      tab === id ? "var(--text-primary)" : "var(--text-muted)",
+                      fontWeight: tab === id ? 600 : 400,
+                      fontSize: "13px", cursor: "pointer", transition: "all 0.15s ease",
+                      fontFamily: "DM Sans, sans-serif",
+                      boxShadow: tab === id ? "var(--shadow-sm)" : "none",
                     }}
                   >
                     {label}
@@ -145,70 +163,86 @@ export default function Privacy() {
                 ))}
               </div>
 
-              {/* Verify tab */}
+              {/* ── Verify tab ── */}
               {tab === "verify" && (
                 <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: "16px", padding: "24px" }}>
-                  <h2 style={{ fontFamily: "Syne, sans-serif", fontSize: "17px", margin: "0 0 16px", color: "var(--text-primary)" }}>
+                  <h2 style={{ fontFamily: "Syne, sans-serif", fontSize: "17px", margin: "0 0 6px", color: "var(--text-primary)" }}>
                     Verify an Asset Proof
                   </h2>
                   <p style={{ fontSize: "13px", color: "var(--text-secondary)", margin: "0 0 20px" }}>
                     Enter an asset contract address and document hash to verify the proof on-chain.
                   </p>
 
-                  {/* Quick select from user's assets */}
-                  {myAssets.length > 0 && (
+                  {/* Quick select — all assets from Supabase */}
+                  {allAssets.length > 0 && (
                     <div style={{ marginBottom: "14px" }}>
-                      <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Select Your Asset</label>
+                      <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>
+                        Select Your Asset
+                      </label>
                       <select
                         className="input"
+                        style={{ cursor: "pointer" }}
                         onChange={(e) => {
-                          const asset = myAssets.find(a => a.id === e.target.value);
+                          const asset = allAssets.find((a) => a.id === e.target.value);
                           if (asset) {
-                            setVerifyAsset(asset.contractAddress || asset.id);
-                            setVerifyHash(asset.zkpHash || "");
+                            setVerifyAsset(asset.contractAddress || asset.id || "");
+                            setVerifyHash(asset.zkpHash || ""); // ✅ now works — normalized above
                             setVerifyResult(null);
                           }
                         }}
-                        style={{ cursor: "pointer" }}
                       >
                         <option value="">-- Select an asset --</option>
-                        {myAssets.map((a) => (
+                        {allAssets.map((a) => (
                           <option key={a.id} value={a.id}>{a.name}</option>
                         ))}
                       </select>
                     </div>
                   )}
+
                   <div style={{ marginBottom: "14px" }}>
-                    <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Asset Contract Address</label>
-                    <input type="text" placeholder="5Grwva..." value={verifyAsset} onChange={(e) => { setVerifyAsset(e.target.value); setVerifyResult(null); }} className="input" />
+                    <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>
+                      Asset Contract Address
+                    </label>
+                    <input
+                      type="text" placeholder="5Grwva..." value={verifyAsset} className="input"
+                      onChange={(e) => { setVerifyAsset(e.target.value); setVerifyResult(null); }}
+                    />
                   </div>
+
                   <div style={{ marginBottom: "20px" }}>
-                    <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Document Hash (SHA-256)</label>
-                    <input type="text" placeholder="a3f8e9b2c1d4..." value={verifyHash} onChange={(e) => { setVerifyHash(e.target.value); setVerifyResult(null); }} className="input" style={{ fontFamily: "JetBrains Mono, monospace" }} />
+                    <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>
+                      Document Hash (SHA-256)
+                    </label>
+                    <input
+                      type="text" placeholder="a3f8e9b2c1d4..." value={verifyHash} className="input"
+                      style={{ fontFamily: "JetBrains Mono, monospace" }}
+                      onChange={(e) => { setVerifyHash(e.target.value); setVerifyResult(null); }}
+                    />
+                    {/* ✅ Helper: show if hash loaded from asset selection */}
+                    {verifyHash && (
+                      <p style={{ fontSize: "11px", color: "var(--accent-green)", margin: "4px 0 0" }}>
+                        ✓ Hash loaded from asset
+                      </p>
+                    )}
                   </div>
 
                   <Button variant="primary" fullWidth loading={verifying} icon={ShieldCheck} onClick={handleVerify}>
                     {verifying ? "Verifying on-chain..." : "Verify Proof"}
                   </Button>
 
-                  {/* Result */}
                   {verifyResult !== null && (
                     <div style={{
-                      marginTop:    "16px",
-                      padding:      "16px",
-                      borderRadius: "12px",
+                      marginTop: "16px", padding: "16px", borderRadius: "12px",
                       background:   verifyResult ? "rgba(0,229,160,0.08)" : "rgba(255,107,107,0.08)",
                       border:       `1px solid ${verifyResult ? "rgba(0,229,160,0.3)" : "rgba(255,107,107,0.3)"}`,
-                      display:      "flex",
-                      alignItems:   "center",
-                      gap:          "12px",
+                      display: "flex", alignItems: "center", gap: "12px",
                     }}>
                       {verifyResult
                         ? <CheckCircle2 size={24} color="var(--accent-green)" />
                         : <XCircle      size={24} color="var(--accent-coral)" />
                       }
                       <div>
-                        <p style={{ fontSize: "14px", fontWeight: 700, color: verifyResult ? "var(--accent-green)" : "var(--accent-coral)", margin: "0 0 2px" }}>
+                        <p style={{ fontSize: "14px", fontWeight: 700, margin: "0 0 2px", color: verifyResult ? "var(--accent-green)" : "var(--accent-coral)" }}>
                           {verifyResult ? "✓ Proof Verified" : "✗ Proof Invalid"}
                         </p>
                         <p style={{ fontSize: "12px", color: "var(--text-secondary)", margin: 0 }}>
@@ -222,7 +256,7 @@ export default function Privacy() {
                 </div>
               )}
 
-              {/* Submit tab */}
+              {/* ── Submit tab ── */}
               {tab === "submit" && (
                 <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: "16px", padding: "24px" }}>
                   <h2 style={{ fontFamily: "Syne, sans-serif", fontSize: "17px", margin: "0 0 16px", color: "var(--text-primary)" }}>
@@ -242,39 +276,54 @@ export default function Privacy() {
                     </div>
                   ) : (
                     <>
-                      {/* Quick select from user's tokenized assets */}
-                      {myAssets.length > 0 && (
+                      {allAssets.length > 0 && (
                         <div style={{ marginBottom: "14px" }}>
-                          <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Select Your Asset</label>
+                          <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>
+                            Select Your Asset
+                          </label>
                           <select
                             className="input"
+                            style={{ cursor: "pointer" }}
                             onChange={(e) => {
-                              const asset = myAssets.find(a => a.id === e.target.value);
+                              const asset = allAssets.find((a) => a.id === e.target.value);
                               if (asset) {
-                                setSubmitAsset(asset.contractAddress || asset.id);
-                                setSubmitCid(asset.ipfsCid || "");
-                                setSubmitHash(asset.zkpHash || "");
+                                setSubmitAsset(asset.contractAddress || asset.id || "");
+                                setSubmitCid(asset.ipfsCid || "");   // ✅ normalized above
+                                setSubmitHash(asset.zkpHash || "");  // ✅ normalized above
                               }
                             }}
-                            style={{ cursor: "pointer" }}
                           >
                             <option value="">-- Select an asset --</option>
-                            {myAssets.map((a) => (
+                            {allAssets.map((a) => (
                               <option key={a.id} value={a.id}>{a.name}</option>
                             ))}
                           </select>
                         </div>
                       )}
+
                       {[
-                        { label: "Asset Contract Address", key: "asset", value: submitAsset, set: setSubmitAsset, placeholder: "5Grwva...", mono: false },
-                        { label: "IPFS CID",               key: "cid",   value: submitCid,   set: setSubmitCid,   placeholder: "QmXabc...", mono: false },
-                        { label: "Document Hash (SHA-256)",key: "hash",  value: submitHash,  set: setSubmitHash,  placeholder: "a3f8e9b2...", mono: true  },
+                        { label: "Asset Contract Address",  value: submitAsset, set: setSubmitAsset, placeholder: "5Grwva...",    mono: false },
+                        { label: "IPFS CID",                value: submitCid,   set: setSubmitCid,   placeholder: "QmXabc...",    mono: false },
+                        { label: "Document Hash (SHA-256)", value: submitHash,  set: setSubmitHash,  placeholder: "a3f8e9b2...",  mono: true  },
                       ].map(({ label, value, set, placeholder, mono }) => (
                         <div key={label} style={{ marginBottom: "14px" }}>
-                          <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>{label}</label>
-                          <input type="text" placeholder={placeholder} value={value} onChange={(e) => set(e.target.value)} className="input" style={mono ? { fontFamily: "JetBrains Mono, monospace" } : {}} />
+                          <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>
+                            {label}
+                          </label>
+                          <input
+                            type="text" placeholder={placeholder} value={value} className="input"
+                            style={mono ? { fontFamily: "JetBrains Mono, monospace" } : {}}
+                            onChange={(e) => set(e.target.value)}
+                          />
+                          {/* ✅ Helper: confirm field auto-filled */}
+                          {value && (
+                            <p style={{ fontSize: "11px", color: "var(--accent-green)", margin: "4px 0 0" }}>
+                              ✓ Auto-filled from asset
+                            </p>
+                          )}
                         </div>
                       ))}
+
                       <Button variant="primary" fullWidth loading={submitting} icon={Shield} onClick={handleSubmit} style={{ marginTop: "8px" }}>
                         {submitting ? "Submitting on-chain..." : "Submit Proof"}
                       </Button>
@@ -284,36 +333,44 @@ export default function Privacy() {
               )}
             </div>
 
-            {/* Right: proof registry */}
+            {/* Right: proof registry — real data from Supabase */}
             <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: "14px", padding: "18px" }}>
               <h3 style={{ fontFamily: "Syne, sans-serif", fontSize: "15px", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 16px" }}>
                 Proof Registry
               </h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                {MOCK_PROOFS.map((proof, i) => {
-                  const { color, bg, icon: StatusIcon } = statusColors[proof.status] || statusColors.Pending;
-                  return (
-                    <div key={i} style={{ padding: "12px", borderRadius: "10px", background: "var(--bg-muted)", border: "1px solid var(--border)" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "6px" }}>
-                        <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-primary)", margin: 0, flex: 1, paddingRight: "8px" }}>
-                          {proof.assetName}
+
+              {proofRegistry.length === 0 ? (
+                <p style={{ fontSize: "12px", color: "var(--text-muted)", textAlign: "center", padding: "20px 0" }}>
+                  No proofs submitted yet
+                </p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {proofRegistry.map((proof, i) => {
+                    const { color, bg } = statusColors[proof.status] || statusColors.Pending;
+                    return (
+                      <div key={i} style={{ padding: "12px", borderRadius: "10px", background: "var(--bg-muted)", border: "1px solid var(--border)" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "6px" }}>
+                          <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-primary)", margin: 0, flex: 1, paddingRight: "8px" }}>
+                            {proof.assetName}
+                          </p>
+                          <span style={{ fontSize: "10px", fontWeight: 600, padding: "2px 7px", borderRadius: "20px", background: bg, color, flexShrink: 0 }}>
+                            {proof.status}
+                          </span>
+                        </div>
+                        <p style={{ fontSize: "10px", color: "var(--text-muted)", margin: "0 0 2px", fontFamily: "JetBrains Mono, monospace" }}>
+                          Hash: {proof.hash}
                         </p>
-                        <span style={{ fontSize: "10px", fontWeight: 600, padding: "2px 7px", borderRadius: "20px", background: bg, color, flexShrink: 0 }}>
-                          {proof.status}
-                        </span>
+                        <p style={{ fontSize: "10px", color: "var(--text-muted)", margin: 0 }}>
+                          Submitted: {proof.submittedAt}
+                          {proof.verifiedAt && ` · Verified: ${proof.verifiedAt}`}
+                        </p>
                       </div>
-                      <p style={{ fontSize: "10px", color: "var(--text-muted)", margin: "0 0 2px", fontFamily: "JetBrains Mono, monospace" }}>
-                        Hash: {proof.hash}
-                      </p>
-                      <p style={{ fontSize: "10px", color: "var(--text-muted)", margin: 0 }}>
-                        Submitted: {proof.submittedAt}
-                        {proof.verifiedAt && ` · Verified: ${proof.verifiedAt}`}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
+
           </div>
         </main>
       </div>
