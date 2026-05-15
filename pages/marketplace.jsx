@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchAllAssets } from "@/utils/supabase";
+import { fetchAllAssets, supabase } from "@/utils/supabase";
 import Head from "next/head";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
@@ -37,6 +37,7 @@ export default function Marketplace() {
   const [buying,        setBuying]       = useState(false);
   const [showSuccess,   setShowSuccess]  = useState(false);
   const [loading,       setLoading]      = useState(true);
+  const [buyError,      setBuyError]     = useState("");
 
   useEffect(() => {
     async function load() {
@@ -74,11 +75,43 @@ export default function Marketplace() {
     );
 
   const handleBuy = async () => {
+    if (!quantity || quantity <= 0) return;
+    if (quantity > selectedAsset.fractionsAvailable) {
+      setBuyError("Quantity exceeds available fractions.");
+      return;
+    }
+
     setBuying(true);
-    await new Promise((r) => setTimeout(r, 2000));
-    setBuying(false);
-    setSelectedAsset(null);
-    setShowSuccess(true);
+    setBuyError("");
+
+    try {
+      const newAvailable = selectedAsset.fractionsAvailable - quantity;
+
+      const { error } = await supabase
+        .from("assetdot")
+        .update({ fractions_available: newAvailable })
+        .eq("id", selectedAsset.id);
+
+      if (error) throw error;
+
+      // Update local state immediately so UI reflects the change without a reload
+      setAllListings((prev) =>
+        prev.map((a) =>
+          a.id === selectedAsset.id
+            ? { ...a, fractionsAvailable: newAvailable }
+            : a
+        )
+      );
+
+      setSelectedAsset(null);
+      setQuantity(0);
+      setShowSuccess(true);
+    } catch (e) {
+      console.error("Buy failed:", e);
+      setBuyError("Purchase failed. Please try again.");
+    } finally {
+      setBuying(false);
+    }
   };
 
   const totalCost = selectedAsset
@@ -198,6 +231,7 @@ export default function Marketplace() {
                     if (!isConnected) { connect(); return; }
                     setSelectedAsset(a);
                     setQuantity(0);
+                    setBuyError("");
                   }}
                 />
               ))}
@@ -208,7 +242,7 @@ export default function Marketplace() {
       </div>
 
       {/* Buy modal */}
-      <Modal isOpen={!!selectedAsset} onClose={() => setSelectedAsset(null)} title="Buy Fractions" size="sm">
+      <Modal isOpen={!!selectedAsset} onClose={() => { setSelectedAsset(null); setBuyError(""); }} title="Buy Fractions" size="sm">
         {selectedAsset && (
           <div>
             <div style={{ padding: "12px", borderRadius: "10px", background: "var(--bg-muted)", marginBottom: "16px" }}>
@@ -225,7 +259,10 @@ export default function Marketplace() {
                 min="1"
                 max={selectedAsset.fractionsAvailable}
                 value={quantity === 0 ? "" : quantity}
-                onChange={(e) => setQuantity(e.target.value === "" ? 0 : Number(e.target.value))}
+                onChange={(e) => {
+                  setBuyError("");
+                  setQuantity(e.target.value === "" ? 0 : Number(e.target.value));
+                }}
                 className="input"
               />
               <p style={{ fontSize: "11px", color: "var(--text-muted)", margin: "4px 0 0" }}>
@@ -245,10 +282,18 @@ export default function Marketplace() {
               </div>
             ))}
 
+            {/* Error message */}
+            {buyError && (
+              <p style={{ fontSize: "12px", color: "var(--accent-red, #ef4444)", marginTop: "10px", textAlign: "center" }}>
+                {buyError}
+              </p>
+            )}
+
             <Button
               variant="primary" fullWidth loading={buying}
               icon={ShoppingCart} style={{ marginTop: "16px" }}
               onClick={handleBuy}
+              disabled={buying || quantity <= 0}
             >
               {buying ? "Processing..." : `Buy ${quantity.toLocaleString()} Fractions`}
             </Button>
