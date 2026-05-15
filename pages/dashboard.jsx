@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { fetchMyAssets } from "@/utils/supabase";
 import Head from "next/head";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
@@ -71,11 +72,13 @@ export default function Dashboard() {
 
   const [recentActivity, setRecentActivity] = useState(MOCK_ACTIVITY);
 
-  // Load user assets from localStorage + merge with mock data
+  // Load YOUR assets from Supabase (filtered by wallet address)
   useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem("assetdot-assets") || "[]");
-      setUserAssets(saved);
+    async function load() {
+      try {
+        const address = selectedAccount?.address;
+        const data = await fetchMyAssets(address);
+        setUserAssets(data);
 
       // Build activity from user assets
       const userActivity = saved.map((a) => ({
