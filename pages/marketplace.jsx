@@ -29,11 +29,11 @@ export default function Marketplace() {
   const { isConnected, connect }         = useWallet();
   const router                           = useRouter();
   const [search,        setSearch]       = useState("");
-  const [allListings,   setAllListings]  = useState([]); // ✅ only real Supabase data
+  const [allListings,   setAllListings]  = useState([]);
   const [typeFilter,    setTypeFilter]   = useState("all");
   const [sortBy,        setSortBy]       = useState("value");
   const [selectedAsset, setSelectedAsset]= useState(null);
-  const [quantity,      setQuantity]     = useState(1);
+  const [quantity,      setQuantity]     = useState(0);
   const [buying,        setBuying]       = useState(false);
   const [showSuccess,   setShowSuccess]  = useState(false);
   const [loading,       setLoading]      = useState(true);
@@ -41,7 +41,7 @@ export default function Marketplace() {
   useEffect(() => {
     async function load() {
       try {
-        const data = await fetchAllAssets(); // ✅ fetches ALL assets from ALL wallets
+        const data = await fetchAllAssets();
         setAllListings((data || []).map(normalize));
       } catch (e) {
         console.error("Marketplace load error:", e);
@@ -51,9 +51,8 @@ export default function Marketplace() {
       }
     }
     load();
-  }, []); // runs once on mount — no wallet dependency, marketplace is public
+  }, []);
 
-  // ✅ FIX: use only real listings — no hardcoded LISTINGS merged in
   const filtered = allListings
     .filter((a) => {
       const name     = (a.name     || "").toLowerCase();
@@ -198,7 +197,7 @@ export default function Marketplace() {
                   onTrade={(a) => {
                     if (!isConnected) { connect(); return; }
                     setSelectedAsset(a);
-                    setQuantity(1);
+                    setQuantity(0);
                   }}
                 />
               ))}
@@ -225,8 +224,8 @@ export default function Marketplace() {
                 type="number"
                 min="1"
                 max={selectedAsset.fractionsAvailable}
-                value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
+                value={quantity === 0 ? "" : quantity}
+                onChange={(e) => setQuantity(e.target.value === "" ? 0 : Number(e.target.value))}
                 className="input"
               />
               <p style={{ fontSize: "11px", color: "var(--text-muted)", margin: "4px 0 0" }}>
@@ -264,7 +263,6 @@ export default function Marketplace() {
           <p style={{ fontSize: "14px", color: "var(--text-secondary)", margin: "0 0 16px" }}>
             Your fractions have been transferred to your wallet successfully.
           </p>
-          {/* ✅ FIX: router.push instead of window.location.href */}
           <Button variant="primary" fullWidth onClick={() => { setShowSuccess(false); router.push("/dashboard"); }}>
             View in Dashboard
           </Button>
