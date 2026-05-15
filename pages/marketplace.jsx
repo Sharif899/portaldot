@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { fetchAllAssets } from "@/utils/supabase";
 import Head from "next/head";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
@@ -22,17 +23,25 @@ export default function Marketplace() {
   const [search,       setSearch]       = useState("");
   const [userListings, setUserListings] = useState([]);
 
-  // Load user tokenized assets from localStorage
+  // Load ALL assets from Supabase — visible to everyone
   useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem("assetdot-assets") || "[]");
-      setUserListings(saved);
-    } catch(e) { setUserListings([]); }
+    async function load() {
+      try {
+        const data = await fetchAllAssets();
+        setUserListings(data);
+      } catch(e) {
+        try {
+          const saved = JSON.parse(localStorage.getItem("assetdot-assets") || "[]");
+          setUserListings(saved);
+        } catch(e2) { setUserListings([]); }
+      }
+    }
+    load();
   }, []);
   const [typeFilter,   setTypeFilter]   = useState("all");
   const [sortBy,       setSortBy]       = useState("value");
   const [selectedAsset,setSelectedAsset]= useState(null);
-  const [quantity,     setQuantity]     = useState("");
+  const [quantity,     setQuantity]     = useState(1);
   const [buying,       setBuying]       = useState(false);
   const [showSuccess,  setShowSuccess]  = useState(false);
 
@@ -62,7 +71,7 @@ export default function Marketplace() {
     setShowSuccess(true);
   };
 
-  const totalCost = selectedAsset ? ((Number(quantity) || 0) * selectedAsset.pricePerFraction).toFixed(4) : 0;
+  const totalCost = selectedAsset ? (quantity * selectedAsset.pricePerFraction).toFixed(4) : 0;
 
   return (
     <>
@@ -146,7 +155,7 @@ export default function Marketplace() {
                   onTrade={(a) => {
                     if (!isConnected) { connect(); return; }
                     setSelectedAsset(a);
-                    setQuantity("");
+                    setQuantity(1);
                   }}
                 />
               ))}
@@ -175,16 +184,10 @@ export default function Marketplace() {
               </label>
               <input
                 type="number"
-                min="0"
+                min="1"
                 max={selectedAsset.fractionsAvailable}
-                placeholder="Enter amount"
                 value={quantity}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (val === "") { setQuantity(""); return; }
-                  const num = Number(val);
-                  if (!isNaN(num) && num >= 0) setQuantity(num);
-                }}
+                onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
                 className="input"
               />
               <p style={{ fontSize: "11px", color: "var(--text-muted)", margin: "4px 0 0" }}>
@@ -195,9 +198,9 @@ export default function Marketplace() {
             {/* Cost breakdown */}
             {[
               { label: "Price per fraction", value: `${selectedAsset.pricePerFraction} POT` },
-              { label: "Quantity",           value: (Number(quantity) || 0).toLocaleString() },
-              { label: "Platform fee (1%)",  value: `${(totalCost * 0.01).toFixed(4)} POT`  },
-              { label: "Total cost",         value: `${totalCost} POT`, bold: true           },
+              { label: "Quantity",           value: quantity.toLocaleString()               },
+              { label: "Platform fee (1%)",  value: `${(totalCost * 0.01).toFixed(4)} POT` },
+              { label: "Total cost",         value: `${totalCost} POT`, bold: true          },
             ].map(({ label, value, bold }) => (
               <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
                 <span style={{ fontSize: "13px", color: "var(--text-secondary)" }}>{label}</span>
@@ -206,7 +209,7 @@ export default function Marketplace() {
             ))}
 
             <Button variant="primary" fullWidth loading={buying} icon={ShoppingCart} style={{ marginTop: "16px" }} onClick={handleBuy}>
-              {buying ? "Processing..." : `Buy ${(Number(quantity) || 0).toLocaleString()} Fractions`}
+              {buying ? "Processing..." : `Buy ${quantity.toLocaleString()} Fractions`}
             </Button>
           </div>
         )}
