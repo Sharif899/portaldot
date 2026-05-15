@@ -12,11 +12,10 @@ import {
   Plus, AlertCircle, ArrowUpRight,
 } from "lucide-react";
 
-// ── Mock data — makes dashboard look real during judging ────────
 const MOCK_ASSETS = [
   {
     id:                 "1",
-    name:               "Lagos Island Apartment Block A",
+    name:               "Lagos Apartment Block A",
     assetType:          0,
     valueUsd:           250000,
     fractions:          1000000,
@@ -30,7 +29,21 @@ const MOCK_ASSETS = [
   },
   {
     id:                 "2",
-    name:               "Cocoa Export Batch #2024-11",
+    name:               "Abuja Commercial Plaza Unit 5",
+    assetType:          0,
+    valueUsd:           180000,
+    fractions:          800000,
+    fractionsAvailable: 600000,
+    pricePerFraction:   0.28,
+    owner:              "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+    ipfsCid:            "QmAbc456def789",
+    isVerified:         true,
+    status:             "Active",
+    location:           "Abuja, Nigeria",
+  },
+  {
+    id:                 "3",
+    name:               "Cocoa Export Batch #2026-04",
     assetType:          1,
     valueUsd:           85000,
     fractions:          500000,
@@ -43,7 +56,7 @@ const MOCK_ASSETS = [
     location:           "Accra, Ghana",
   },
   {
-    id:                 "3",
+    id:                 "4",
     name:               "Trade Invoice — Zenith Supplies",
     assetType:          2,
     valueUsd:           32000,
@@ -59,52 +72,54 @@ const MOCK_ASSETS = [
 ];
 
 const MOCK_ACTIVITY = [
-  { type: "mint",     asset: "Lagos Island Apartment Block A", time: "2 hours ago",  amount: "+1,000,000 fractions", color: "var(--accent-green)" },
-  { type: "trade",    asset: "Cocoa Export Batch #2024-11",    time: "5 hours ago",  amount: "−180,000 fractions",   color: "var(--accent-amber)" },
-  { type: "verified", asset: "Lagos Island Apartment Block A", time: "6 hours ago",  amount: "ZKP Verified",         color: "var(--brand)"        },
-  { type: "mint",     asset: "Trade Invoice — Zenith Supplies",time: "1 day ago",    amount: "+100,000 fractions",   color: "var(--accent-green)" },
+  { type: "mint",     asset: "Lagos Apartment Block A",         time: "2 hours ago", amount: "+1,000,000 fractions", color: "var(--accent-green)" },
+  { type: "mint",     asset: "Abuja Commercial Plaza Unit 5",   time: "3 hours ago", amount: "+800,000 fractions",   color: "var(--accent-green)" },
+  { type: "trade",    asset: "Cocoa Export Batch #2026-04",     time: "5 hours ago", amount: "−180,000 fractions",   color: "var(--accent-amber)" },
+  { type: "verified", asset: "Lagos Apartment Block A",         time: "6 hours ago", amount: "ZKP Verified",         color: "var(--brand)"        },
+  { type: "mint",     asset: "Trade Invoice — Zenith Supplies", time: "1 day ago",   amount: "+100,000 fractions",   color: "var(--accent-green)" },
 ];
 
 export default function Dashboard() {
   const { isConnected, connect, selectedAccount, shortAddress } = useWallet();
-  const [filter, setFilter] = useState("all");
-  const [userAssets, setUserAssets] = useState([]);
-
+  const [filter, setFilter]                 = useState("all");
+  const [userAssets, setUserAssets]         = useState([]);
   const [recentActivity, setRecentActivity] = useState(MOCK_ACTIVITY);
 
-  // Load YOUR assets from Supabase (filtered by wallet address)
   useEffect(() => {
     async function load() {
       try {
         const address = selectedAccount?.address;
         const data = await fetchMyAssets(address);
-        setUserAssets(data);
+        setUserAssets(data || []);
+        const userActivity = (data || []).map((a) => ({
+          type:   "mint",
+          asset:  a.name,
+          time:   new Date(a.created_at).toLocaleString(),
+          amount: `+${Number(a.fractions).toLocaleString()} fractions`,
+          color:  "var(--accent-green)",
+        }));
+        setRecentActivity([...userActivity, ...MOCK_ACTIVITY]);
+      } catch (e) {
+        setUserAssets([]);
+      }
+    }
+    load();
+  }, [selectedAccount?.address]);
 
-      // Build activity from user assets
-      const userActivity = saved.map((a) => ({
-        type:   "mint",
-        asset:  a.name,
-        time:   new Date(a.createdAt).toLocaleString(),
-        amount: `+${Number(a.fractions).toLocaleString()} fractions`,
-        color:  "var(--accent-green)",
-      }));
-      setRecentActivity([...userActivity, ...MOCK_ACTIVITY]);
-    } catch(e) { setUserAssets([]); }
-  }, []);
-
-  const ALL_ASSETS = [...userAssets, ...MOCK_ASSETS];
-  const totalValue    = ALL_ASSETS.reduce((sum, a) => sum + (Number(a.valueUsd) || 0), 0);
-  const verifiedCount = ALL_ASSETS.filter((a) => a.isVerified).length;
+  const ALL_ASSETS    = [...userAssets, ...MOCK_ASSETS];
+  const totalValue    = ALL_ASSETS.reduce((sum, a) => sum + (Number(a.valueUsd || a.value_usd) || 0), 0);
+  const verifiedCount = ALL_ASSETS.filter((a) => a.isVerified || a.is_verified).length;
   const activeCount   = ALL_ASSETS.filter((a) => a.status === "Active").length;
   const totalAssets   = ALL_ASSETS.length;
 
   const filtered = filter === "all"
     ? ALL_ASSETS
-    : ALL_ASSETS.filter((a) =>
-        filter === "property"  ? a.assetType === 0 :
-        filter === "commodity" ? a.assetType === 1 :
-        filter === "invoice"   ? a.assetType === 2 : true
-      );
+    : ALL_ASSETS.filter((a) => {
+        const type = a.assetType ?? a.asset_type;
+        return filter === "property"  ? type === 0 :
+               filter === "commodity" ? type === 1 :
+               filter === "invoice"   ? type === 2 : true;
+      });
 
   if (!isConnected) {
     return (
@@ -131,7 +146,6 @@ export default function Dashboard() {
 
         <main style={{ flex: 1, padding: "clamp(12px, 3vw, 32px)", overflowY: "auto", background: "var(--bg-base)", minWidth: 0 }}>
 
-          {/* Header */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "28px", flexWrap: "wrap", gap: "12px" }}>
             <div>
               <h1 style={{ fontFamily: "Syne, sans-serif", fontSize: "26px", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 4px", letterSpacing: "-0.02em" }}>
@@ -146,23 +160,16 @@ export default function Dashboard() {
             </Link>
           </div>
 
-          {/* Stats row */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "16px", marginBottom: "28px" }}>
             {[
-              { label: "Total Portfolio Value", value: `$${(totalValue / 1000).toFixed(0)}K`, icon: TrendingUp,  color: "var(--brand)"        },
-              { label: "Tokenized Assets",      value: totalAssets,                    icon: Layers,      color: "var(--accent-cyan)"  },
-              { label: "ZKP Verified",          value: `${verifiedCount}/${totalAssets}`, icon: ShieldCheck, color: "var(--accent-green)" },
+              { label: "Total Portfolio Value", value: `$${(totalValue / 1000).toFixed(0)}K`, icon: TrendingUp,   color: "var(--brand)"        },
+              { label: "Tokenized Assets",      value: totalAssets,                            icon: Layers,       color: "var(--accent-cyan)"  },
+              { label: "ZKP Verified",          value: `${verifiedCount}/${totalAssets}`,      icon: ShieldCheck,  color: "var(--accent-green)" },
               { label: "Active Assets",         value: activeCount,                            icon: ArrowUpRight, color: "var(--accent-amber)" },
             ].map(({ label, value, icon: Icon, color }) => (
-              <div key={label} style={{
-                background:   "var(--bg-surface)",
-                border:       "1px solid var(--border)",
-                borderRadius: "14px",
-                padding:      "18px",
-                transition:   "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = color; e.currentTarget.style.boxShadow = `0 4px 20px ${color}22`; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.boxShadow = "none"; }}
+              <div key={label} style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: "14px", padding: "18px", transition: "all 0.2s ease" }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = color; e.currentTarget.style.boxShadow = `0 4px 20px ${color}22`; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.boxShadow = "none"; }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
                   <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: 0 }}>{label}</p>
@@ -177,27 +184,25 @@ export default function Dashboard() {
             ))}
           </div>
 
-          {/* Assets section */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: "24px", alignItems: "start" }}>
             <div>
-              {/* Filter tabs */}
               <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
                 {["all", "property", "commodity", "invoice"].map((f) => (
                   <button
                     key={f}
                     onClick={() => setFilter(f)}
                     style={{
-                      padding:      "6px 14px",
-                      borderRadius: "20px",
-                      border:       `1px solid ${filter === f ? "var(--brand)" : "var(--border)"}`,
-                      background:   filter === f ? "var(--brand-dim)" : "transparent",
-                      color:        filter === f ? "var(--brand)" : "var(--text-secondary)",
-                      fontSize:     "12px",
-                      fontWeight:   filter === f ? 600 : 400,
-                      cursor:       "pointer",
-                      transition:   "all 0.15s ease",
-                      fontFamily:   "DM Sans, sans-serif",
-                      textTransform:"capitalize",
+                      padding:       "6px 14px",
+                      borderRadius:  "20px",
+                      border:        `1px solid ${filter === f ? "var(--brand)" : "var(--border)"}`,
+                      background:    filter === f ? "var(--brand-dim)" : "transparent",
+                      color:         filter === f ? "var(--brand)" : "var(--text-secondary)",
+                      fontSize:      "12px",
+                      fontWeight:    filter === f ? 600 : 400,
+                      cursor:        "pointer",
+                      transition:    "all 0.15s ease",
+                      fontFamily:    "DM Sans, sans-serif",
+                      textTransform: "capitalize",
                     }}
                   >
                     {f === "all" ? "All Assets" : f}
@@ -205,7 +210,6 @@ export default function Dashboard() {
                 ))}
               </div>
 
-              {/* Asset grid */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" }}>
                 {filtered.map((asset) => (
                   <AssetCard key={asset.id} asset={asset} />
@@ -213,7 +217,6 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Recent activity */}
             <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: "14px", padding: "18px" }}>
               <h3 style={{ fontFamily: "Syne, sans-serif", fontSize: "15px", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 16px" }}>
                 Recent Activity
@@ -234,6 +237,7 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+
         </main>
       </div>
     </>
