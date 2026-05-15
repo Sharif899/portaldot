@@ -80,17 +80,19 @@ export default function Dashboard() {
         const data = await fetchMyAssets(address);
         setUserAssets(data);
 
-      // Build activity from user assets
-      const userActivity = saved.map((a) => ({
-        type:   "mint",
-        asset:  a.name,
-        time:   new Date(a.createdAt).toLocaleString(),
-        amount: `+${Number(a.fractions).toLocaleString()} fractions`,
-        color:  "var(--accent-green)",
-      }));
-      setRecentActivity([...userActivity, ...MOCK_ACTIVITY]);
-    } catch(e) { setUserAssets([]); }
-  }, []);
+        // Build activity from user assets
+        const userActivity = data.map((a) => ({
+          type:   "mint",
+          asset:  a.name,
+          time:   new Date(a.created_at || a.createdAt).toLocaleString(),
+          amount: `+${Number(a.fractions).toLocaleString()} fractions`,
+          color:  "var(--accent-green)",
+        }));
+        setRecentActivity([...userActivity, ...MOCK_ACTIVITY]);
+      } catch(e) { setUserAssets([]); }
+    }
+    load();
+  }, [selectedAccount]);
 
   const ALL_ASSETS = [...userAssets, ...MOCK_ASSETS];
   const totalValue    = ALL_ASSETS.reduce((sum, a) => sum + (Number(a.valueUsd) || 0), 0);
