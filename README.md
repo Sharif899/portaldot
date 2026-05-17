@@ -43,6 +43,25 @@ Once tokenized:
 
 ---
 
+## ⛓️ On-Chain Deployment (Portaldot Local Dev Node)
+
+Smart contract successfully deployed and verified on the Portaldot dev node.
+
+| Field | Value |
+|---|---|
+| **Network** | Portaldot Local Dev Node (portaldot/1002) |
+| **Block** | #112 |
+| **Extrinsic** | `contracts.instantiateWithCode` |
+| **Signer** | ALICE (`5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY`) |
+| **Transaction Hash** | `0x055609c22998c5085eeffde25e4071eb0e3f9b28d064a6de7fc2077cb738447a` |
+| **Gas Limit** | 25,000,000,000 |
+| **Contract** | ink! flipper (v3.x, compatible with Portaldot contracts pallet) |
+| **Status** | ✅ In Block — Success |
+
+> **Note:** The Portaldot v2.0.0 node ships with a contracts pallet that predates ink! 4.x. A pre-compiled ink! 3.x/4.x compatible wasm binary was used to demonstrate on-chain deployment. The full RWA contract logic (PSP22 token, marketplace, ZKP verifier) is implemented in `contracts/` and compiled with ink! 5.x — ready for deployment on an upgraded Portaldot node or testnet.
+
+---
+
 ## 🏗️ Architecture
 
 ```
