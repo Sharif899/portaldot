@@ -5,6 +5,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import { useWallet } from "@/context/WalletContext";
+import { supabase } from "@/lib/supabaseClient"; // ← import your Supabase client
 import { GitMerge, ArrowRight, CheckCircle2, AlertCircle, Info, ArrowLeftRight } from "lucide-react";
 
 const CHAINS = [
@@ -16,30 +17,51 @@ const CHAINS = [
 ];
 
 const MOCK_ASSETS = [
-  { id: "1", name: "Lagos Island Apartment Block A", symbol: "LIAB", balance: 750000 },
+  { id: "1", name: "Lagos Island Apartment Block A", symbol: "LIAB",  balance: 750000 },
   { id: "2", name: "Cocoa Export Batch #2024-11",    symbol: "CEB24", balance: 320000 },
 ];
 
 export default function Bridge() {
-  const { isConnected, connect } = useWallet();
-  const [userAssets,  setUserAssets]  = useState([]);
+  const { isConnected, connect, walletAddress } = useWallet();
+  const [userAssets,    setUserAssets]    = useState([]);
   const [selectedAsset, setSelectedAsset] = useState(MOCK_ASSETS[0]);
-  const [fromChain,   setFromChain]   = useState("portaldot");
-  const [toChain,     setToChain]     = useState("polkadot");
+  const [fromChain,     setFromChain]     = useState("portaldot");
+  const [toChain,       setToChain]       = useState("polkadot");
+  const [amount,        setAmount]        = useState("");
+  const [bridging,      setBridging]      = useState(false);
+  const [txStep,        setTxStep]        = useState(0); // 0=idle 1=approving 2=locking 3=minting 4=done
+  const [showTx,        setShowTx]        = useState(false);
 
-  const [amount,      setAmount]      = useState("");
-  const [bridging,    setBridging]    = useState(false);
-  const [txStep,      setTxStep]      = useState(0); // 0=idle 1=approving 2=locking 3=minting 4=done
-  const [showTx,      setShowTx]      = useState(false);
-
-  // Load user assets from localStorage
+  // ─── Load user assets from Supabase ───────────────────────────────────────
   useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem("assetdot-assets") || "[]");
-      const mapped = saved.map(a => ({ id: a.id, name: a.name, symbol: a.symbol || a.name.slice(0,4).toUpperCase(), balance: a.fractionsAvailable || a.fractions }));
-      setUserAssets(mapped);
-    } catch(e) { setUserAssets([]); }
-  }, []);
+    if (!isConnected) return;
+
+    async function fetchAssets() {
+      try {
+        const { data, error } = await supabase
+          .from("assets")                      // ← your Supabase table name
+          .select("id, name, symbol, fractions_available, fractions")
+          .eq("owner_address", walletAddress); // ← filter by connected wallet
+
+        if (error) throw error;
+
+        const mapped = (data || []).map((a) => ({
+          id:      a.id,
+          name:    a.name,
+          symbol:  a.symbol || a.name.slice(0, 4).toUpperCase(),
+          balance: a.fractions_available ?? a.fractions ?? 0,
+        }));
+
+        setUserAssets(mapped);
+      } catch (e) {
+        console.error("Failed to fetch assets from Supabase:", e);
+        setUserAssets([]);
+      }
+    }
+
+    fetchAssets();
+  }, [isConnected, walletAddress]);
+  // ──────────────────────────────────────────────────────────────────────────
 
   const swapChains = () => {
     setFromChain(toChain);
@@ -51,7 +73,6 @@ export default function Bridge() {
     setShowTx(true);
     setBridging(true);
 
-    // Simulate multi-step bridge transaction
     for (let s = 1; s <= 4; s++) {
       await new Promise((r) => setTimeout(r, 1500));
       setTxStep(s);
@@ -66,8 +87,7 @@ export default function Bridge() {
     "Bridge complete!",
   ];
 
-  const MOCK_ASSETS_STATIC = MOCK_ASSETS;
-  const ALL_BRIDGE_ASSETS = [...userAssets, ...MOCK_ASSETS_STATIC];
+  const ALL_BRIDGE_ASSETS = [...userAssets, ...MOCK_ASSETS];
   const fromChainInfo = CHAINS.find((c) => c.id === fromChain);
   const toChainInfo   = CHAINS.find((c) => c.id === toChain);
 
@@ -133,19 +153,11 @@ export default function Bridge() {
                 <button
                   onClick={swapChains}
                   style={{
-                    width:        "36px",
-                    height:       "36px",
-                    borderRadius: "50%",
-                    border:       "1px solid var(--border)",
-                    background:   "var(--bg-muted)",
-                    display:      "flex",
-                    alignItems:   "center",
-                    justifyContent: "center",
-                    cursor:       "pointer",
-                    color:        "var(--text-secondary)",
-                    flexShrink:   0,
-                    marginTop:    "18px",
-                    transition:   "all 0.2s ease",
+                    width: "36px", height: "36px", borderRadius: "50%",
+                    border: "1px solid var(--border)", background: "var(--bg-muted)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    cursor: "pointer", color: "var(--text-secondary)",
+                    flexShrink: 0, marginTop: "18px", transition: "all 0.2s ease",
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = "var(--brand-dim)"; e.currentTarget.style.color = "var(--brand)"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = "var(--bg-muted)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
@@ -193,15 +205,11 @@ export default function Bridge() {
                       key={asset.id}
                       onClick={() => setSelectedAsset(asset)}
                       style={{
-                        padding:      "12px",
-                        borderRadius: "10px",
-                        border:       `1px solid ${selectedAsset?.id === asset.id ? "var(--brand)" : "var(--border)"}`,
-                        background:   selectedAsset?.id === asset.id ? "var(--brand-dim)" : "var(--bg-muted)",
-                        cursor:       "pointer",
-                        display:      "flex",
-                        justifyContent: "space-between",
-                        alignItems:   "center",
-                        transition:   "all 0.15s ease",
+                        padding: "12px", borderRadius: "10px",
+                        border: `1px solid ${selectedAsset?.id === asset.id ? "var(--brand)" : "var(--border)"}`,
+                        background: selectedAsset?.id === asset.id ? "var(--brand-dim)" : "var(--bg-muted)",
+                        cursor: "pointer", display: "flex", justifyContent: "space-between",
+                        alignItems: "center", transition: "all 0.15s ease",
                       }}
                     >
                       <div>
@@ -231,18 +239,10 @@ export default function Bridge() {
                   <button
                     onClick={() => setAmount(selectedAsset?.balance || 0)}
                     style={{
-                      position:   "absolute",
-                      right:      "10px",
-                      top:        "50%",
-                      transform:  "translateY(-50%)",
-                      fontSize:   "11px",
-                      fontWeight: 600,
-                      color:      "var(--brand)",
-                      background: "var(--brand-dim)",
-                      border:     "none",
-                      borderRadius:"6px",
-                      padding:    "3px 8px",
-                      cursor:     "pointer",
+                      position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)",
+                      fontSize: "11px", fontWeight: 600, color: "var(--brand)",
+                      background: "var(--brand-dim)", border: "none", borderRadius: "6px",
+                      padding: "3px 8px", cursor: "pointer",
                     }}
                   >
                     MAX
@@ -279,7 +279,7 @@ export default function Bridge() {
       </div>
 
       {/* Bridge progress modal */}
-      <Modal isOpen={showTx} onClose={() => { if (!bridging) { setShowTx(false); setTxStep(0); }}} title="Bridging in Progress" size="sm">
+      <Modal isOpen={showTx} onClose={() => { if (!bridging) { setShowTx(false); setTxStep(0); } }} title="Bridging in Progress" size="sm">
         <div>
           {STEPS_LABELS.map((label, i) => {
             const stepNum = i + 1;
@@ -288,15 +288,10 @@ export default function Bridge() {
             return (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 0", borderBottom: i < 3 ? "1px solid var(--border)" : "none" }}>
                 <div style={{
-                  width:        "28px",
-                  height:       "28px",
-                  borderRadius: "50%",
-                  background:   done ? "var(--accent-green)" : active ? "var(--brand)" : "var(--bg-muted)",
-                  display:      "flex",
-                  alignItems:   "center",
-                  justifyContent: "center",
-                  flexShrink:   0,
-                  transition:   "all 0.3s ease",
+                  width: "28px", height: "28px", borderRadius: "50%",
+                  background: done ? "var(--accent-green)" : active ? "var(--brand)" : "var(--bg-muted)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0, transition: "all 0.3s ease",
                 }}>
                   {done
                     ? <CheckCircle2 size={14} color="#fff" />
