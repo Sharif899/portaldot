@@ -5,7 +5,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import { useWallet } from "@/context/WalletContext";
-import { fetchAllAssets, fetchMyPurchases } from "@/lib/supabase";
+import { fetchAllAssets, fetchMyPurchases } from "@/utils/supabase";
 import { GitMerge, ArrowRight, CheckCircle2, AlertCircle, Info, ArrowLeftRight, Loader2 } from "lucide-react";
 
 const CHAINS = [
