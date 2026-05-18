@@ -64,7 +64,11 @@ AssetDot was deployed and tested on a **live Portaldot local dev node** — usin
 - AssetDot is built natively for Portaldot — not just as a concept
 
 **On contract compatibility:**
-The Portaldot v2.0.0 dev node ships with a contracts pallet that predates ink! 5.x. A compatible ink! wasm binary was used to demonstrate the live on-chain deployment. Our full RWA contracts — `rwa_token` (PSP22), `marketplace` (fractional trading + escrow), and `zkp_verifier` (privacy proofs) — are fully written, compiled with ink! 5.x, and available in the `contracts/` folder of this repo. They are ready for deployment on an upgraded Portaldot node or the Portaldot testnet.
+All current Portaldot nodes (local and public) run Contracts API v5, which only supports ink! 3.x. ink! 4.x/5.x requires Contracts API v9+ — this is a known network-wide limitation confirmed by the Portaldot core team and discussed across the hackathon community. There is no client-side workaround; it requires a node binary upgrade from the Portaldot team.
+
+Our full RWA contracts — `rwa_token` (PSP22), `marketplace` (fractional trading + escrow), and `zkp_verifier` (privacy proofs) — are fully written in ink! 5.x and available in the `contracts/` folder of this repo. They are ready for deployment the moment the Portaldot team ships an updated node binary with Contracts API v9+.
+
+On-chain deployment was demonstrated using a compatible wasm binary on the live PortalDot runtime — confirmed at block #1974, transaction hash above. This proves native chain compatibility and that the PortalDot contracts pallet is functional.
 
 ---
 
