@@ -5,7 +5,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import { useWallet } from "@/context/WalletContext";
-import { fetchAllAssets, fetchMyPurchases } from "@/utils/supabase";
+import { fetchMyAssets } from "@/utils/supabase";
 import { GitMerge, ArrowRight, CheckCircle2, AlertCircle, Info, ArrowLeftRight, Loader2 } from "lucide-react";
 
 const CHAINS = [
@@ -24,7 +24,9 @@ const STEPS_LABELS = [
 ];
 
 export default function Bridge() {
-  const { isConnected, connect, address } = useWallet();
+  // ✅ FIX: use selectedAccount instead of address
+  const { isConnected, connect, selectedAccount } = useWallet();
+  const address = selectedAccount?.address;
 
   const [assets,        setAssets]        = useState([]);
   const [loading,       setLoading]       = useState(true);
@@ -35,36 +37,20 @@ export default function Bridge() {
   const [amount,        setAmount]        = useState("");
 
   const [bridging,      setBridging]      = useState(false);
-  const [txStep,        setTxStep]        = useState(0); // 0=idle 1-4=steps
+  const [txStep,        setTxStep]        = useState(0);
   const [showTx,        setShowTx]        = useState(false);
 
   // ── Load assets from Supabase ──────────────────────────────
   useEffect(() => {
-    if (!isConnected) return;
+    if (!isConnected || !address) return;
 
     async function loadAssets() {
       setLoading(true);
       try {
-        // Get assets this wallet owns (minted)
-        const allAssets  = await fetchAllAssets();
-        const myMinted   = allAssets.filter(
-          (a) => a.owner?.toLowerCase() === address?.toLowerCase()
-        );
+        // ✅ FIX: use fetchMyAssets directly — queries by owner address exactly
+        const myAssets = await fetchMyAssets(address);
 
-        // Get assets this wallet has purchased fractions of
-        const purchases  = await fetchMyPurchases(address);
-        const purchased  = purchases.map((p) => p.assetdot).filter(Boolean);
-
-        // Merge, deduplicate by id
-        const seen = new Set();
-        const merged = [...myMinted, ...purchased].filter((a) => {
-          if (seen.has(a.id)) return false;
-          seen.add(a.id);
-          return true;
-        });
-
-        // Normalise shape for the UI
-        const normalised = merged.map((a) => ({
+        const normalised = myAssets.map((a) => ({
           id:      a.id,
           name:    a.name,
           symbol:  a.name?.slice(0, 4).toUpperCase() || "RWA",
@@ -192,19 +178,16 @@ export default function Bridge() {
                 </label>
 
                 {loading ? (
-                  // Loading state
                   <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "16px", borderRadius: "10px", background: "var(--bg-muted)", border: "1px solid var(--border)" }}>
                     <Loader2 size={16} color="var(--brand)" style={{ animation: "spin 0.8s linear infinite" }} />
-                    <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>Loading your assets from Supabase...</span>
+                    <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>Loading your assets...</span>
                   </div>
                 ) : assets.length === 0 ? (
-                  // Empty state
                   <div style={{ padding: "20px", borderRadius: "10px", background: "var(--bg-muted)", border: "1px solid var(--border)", textAlign: "center" }}>
                     <p style={{ fontSize: "13px", color: "var(--text-muted)", margin: 0 }}>No assets found for your wallet.</p>
                     <p style={{ fontSize: "11px", color: "var(--text-muted)", margin: "4px 0 0" }}>Tokenize an asset first to bridge it.</p>
                   </div>
                 ) : (
-                  // Asset list
                   <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                     {assets.map((asset) => (
                       <div
@@ -231,7 +214,7 @@ export default function Bridge() {
                 )}
               </div>
 
-              {/* Amount input — only show when an asset is selected */}
+              {/* Amount input */}
               {selectedAsset && !loading && (
                 <div style={{ marginBottom: "16px" }}>
                   <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Amount (fractions)</label>
