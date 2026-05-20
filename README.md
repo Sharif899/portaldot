@@ -6,7 +6,7 @@
 
 ## 🎥 Demo Video
 
-> **[Watch Demo](https://youtu.be/UzxcnDjTbwM)**
+> **[Watch Demo](https://youtu.be/bCL-Q9gXaMA)**
 
 ## 🔴 Live App
 
@@ -50,7 +50,7 @@ AssetDot was deployed and tested on a **live Portaldot local dev node** — usin
 | Field | Value |
 |---|---|
 | **Network** | Portaldot Local Dev Node (portaldot/1002) |
-| **Block** | #1974 |
+| **Block** | #1847 |
 | **Extrinsic** | `contracts.instantiateWithCode` |
 | **Signer** | ALICE (`5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY`) |
 | **Transaction Hash** | `0x055609c22998c5085eeffde25e4071eb0e3f9b28d064a6de7fc2077cb738447a` |
