@@ -24,7 +24,6 @@ const STEPS_LABELS = [
 ];
 
 export default function Bridge() {
-  // ✅ FIX: use selectedAccount instead of address
   const { isConnected, connect, selectedAccount } = useWallet();
   const address = selectedAccount?.address;
 
@@ -40,23 +39,19 @@ export default function Bridge() {
   const [txStep,        setTxStep]        = useState(0);
   const [showTx,        setShowTx]        = useState(false);
 
-  // ── Load assets from Supabase ──────────────────────────────
   useEffect(() => {
     if (!isConnected || !address) return;
 
     async function loadAssets() {
       setLoading(true);
       try {
-        // ✅ FIX: use fetchMyAssets directly — queries by owner address exactly
         const myAssets = await fetchMyAssets(address);
-
         const normalised = myAssets.map((a) => ({
           id:      a.id,
           name:    a.name,
           symbol:  a.name?.slice(0, 4).toUpperCase() || "RWA",
           balance: a.fractions_available ?? a.fractions ?? 0,
         }));
-
         setAssets(normalised);
         if (normalised.length > 0) setSelectedAsset(normalised[0]);
       } catch (err) {
@@ -91,7 +86,6 @@ export default function Bridge() {
   const fromChainInfo = CHAINS.find((c) => c.id === fromChain);
   const toChainInfo   = CHAINS.find((c) => c.id === toChain);
 
-  // ── Not connected ─────────────────────────────────────────
   if (!isConnected) {
     return (
       <>
@@ -107,7 +101,6 @@ export default function Bridge() {
     );
   }
 
-  // ── Main UI ───────────────────────────────────────────────
   return (
     <>
       <Head><title>Bridge — AssetDot</title></Head>
@@ -119,7 +112,6 @@ export default function Bridge() {
         <main style={{ flex: 1, padding: "32px", overflowY: "auto", background: "var(--bg-base)" }}>
           <div style={{ maxWidth: "560px" }}>
 
-            {/* Header */}
             <div style={{ marginBottom: "28px" }}>
               <h1 style={{ fontFamily: "Syne, sans-serif", fontSize: "26px", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 4px", letterSpacing: "-0.02em" }}>
                 Cross-Chain Bridge
@@ -129,10 +121,8 @@ export default function Bridge() {
               </p>
             </div>
 
-            {/* Bridge card */}
             <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: "20px", padding: "24px" }}>
 
-              {/* Chain selector row */}
               <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: "6px" }}>From</label>
@@ -162,7 +152,6 @@ export default function Bridge() {
                 </div>
               </div>
 
-              {/* Route display */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", padding: "10px", borderRadius: "10px", background: "var(--bg-muted)", marginBottom: "20px" }}>
                 <span style={{ fontSize: "13px", color: "var(--text-primary)", fontWeight: 600 }}>{fromChainInfo?.logo} {fromChainInfo?.name}</span>
                 <ArrowRight size={14} color="var(--text-muted)" />
@@ -171,7 +160,6 @@ export default function Bridge() {
                 <span style={{ fontSize: "13px", color: "var(--text-primary)", fontWeight: 600 }}>{toChainInfo?.logo} {toChainInfo?.name}</span>
               </div>
 
-              {/* Asset selector */}
               <div style={{ marginBottom: "16px" }}>
                 <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>
                   Select Asset
@@ -214,7 +202,6 @@ export default function Bridge() {
                 )}
               </div>
 
-              {/* Amount input */}
               {selectedAsset && !loading && (
                 <div style={{ marginBottom: "16px" }}>
                   <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Amount (fractions)</label>
@@ -240,7 +227,6 @@ export default function Bridge() {
                 </div>
               )}
 
-              {/* Fee info */}
               <div style={{ display: "flex", gap: "8px", padding: "10px 12px", borderRadius: "10px", background: "var(--bg-muted)", border: "1px solid var(--border)", marginBottom: "16px" }}>
                 <Info size={14} color="var(--brand)" style={{ flexShrink: 0, marginTop: "1px" }} />
                 <p style={{ fontSize: "12px", color: "var(--text-secondary)", margin: 0, lineHeight: 1.5 }}>
@@ -263,7 +249,6 @@ export default function Bridge() {
         </main>
       </div>
 
-      {/* Bridge progress modal */}
       <Modal
         isOpen={showTx}
         onClose={() => { if (!bridging) { setShowTx(false); setTxStep(0); } }}
@@ -273,8 +258,8 @@ export default function Bridge() {
         <div>
           {STEPS_LABELS.map((label, i) => {
             const stepNum = i + 1;
-            const done    = txStep > stepNum;
-            const active  = txStep === stepNum;
+            const done    = txStep >= stepNum;
+            const active  = txStep === stepNum - 1 && bridging;
             return (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 0", borderBottom: i < 3 ? "1px solid var(--border)" : "none" }}>
                 <div style={{
@@ -290,7 +275,7 @@ export default function Bridge() {
                       : <span style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: 600 }}>{stepNum}</span>
                   }
                 </div>
-                <span style={{ fontSize: "13px", color: done ? "var(--accent-green)" : active ? "var(--text-primary)" : "var(--text-muted)", fontWeight: active ? 600 : 400 }}>
+                <span style={{ fontSize: "13px", color: done ? "var(--accent-green)" : active ? "var(--text-primary)" : "var(--text-muted)", fontWeight: done || active ? 600 : 400 }}>
                   {label}
                 </span>
               </div>
